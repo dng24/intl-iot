@@ -1,33 +1,38 @@
-import argparse
-import os
-import pickle
-import sys
-import time
 import warnings
-from multiprocessing import Pool
-
 import matplotlib
-import numpy as np
-import pandas as pd
-from matplotlib import pyplot as plt
-from sklearn.cluster import DBSCAN
-from sklearn.cluster import MiniBatchKMeans
-from sklearn.cluster import SpectralClustering
-from sklearn.decomposition import PCA
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.manifold import TSNE
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import silhouette_score
-from sklearn.metrics.cluster import adjusted_rand_score
-from sklearn.metrics.cluster import completeness_score
-from sklearn.metrics.cluster import homogeneity_score
-from sklearn.metrics.cluster import v_measure_score
-from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import LabelBinarizer
-from sklearn.preprocessing import StandardScaler
 
 matplotlib.use("Agg")
+import os
+import sys
+import argparse
+import pickle
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.cluster import MiniBatchKMeans
+from sklearn.cluster import DBSCAN
+from sklearn.manifold import TSNE
+from sklearn.preprocessing import LabelBinarizer
+from sklearn.metrics.cluster import homogeneity_score
+from sklearn.metrics.cluster import completeness_score
+from sklearn.metrics.cluster import v_measure_score
+from sklearn.metrics.cluster import adjusted_rand_score
+from sklearn.metrics import silhouette_score
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+import time
+import warnings
+from sklearn.cluster import SpectralClustering
+from sklearn.metrics import f1_score
+
+import matplotlib
+
+matplotlib.use("Agg")
+from matplotlib import pyplot as plt
+from multiprocessing import Pool
 
 """
 Output: root_model/{alg}/*.models
@@ -35,8 +40,8 @@ root_model/output/result_{alg}.txt
 """
 warnings.simplefilter("ignore", category=DeprecationWarning)
 
-root_feature = '/Users/abhijit/Desktop/GIT_Projects/intl-iot/model/features-testing1.1/us'
-root_model = '/Users/abhijit/Desktop/GIT_Projects/intl-iot/models_new_all/features-testing1.1-all/us'
+root_feature = '/Volumes/Abhijit-Seagate/Data_iot/Features/required-features-split'
+root_model = '/Volumes/Abhijit-Seagate/Data_iot/models/new-tagged-models'
 
 root_output = root_model + '/output'
 dir_tsne_plots = root_model + '/tsne-plots'
@@ -45,26 +50,26 @@ num_pools = 12
 
 # default_models = ['rf']
 # default_models = ['rf', 'knn']
-default_models = ['dbscan', 'kmeans', 'knn', 'rf', 'spectral']
-# default_models = ['knn']
+#default_models = ['dbscan', 'kmeans', 'knn', 'rf', 'spectral']
+default_models = ['knn']
 model_list = []
 
 RED = "\033[31;1m"
 END = "\033[0m"
-path = sys.argv[0]
+PATH = sys.argv[0]
 
 usage_stm = """
-Usage: python3 {prog_name} -f IN_FEATURES_DIR -m OUT_MODELS_DIR [-dknrs]
+Usage: python3 {prog_name} -i IN_FEATURES_DIR -o OUT_MODELS_DIR [-dknrs]
 
 Trains anaylzed pcap files and produces one or more models using different algorithms
 that can predict device activity.
 
-Example: python3 {prog_name} -f features/us/ -m tagged-models/us/ -kn
+Example: python3 {prog_name} -i features/us/ -o tagged-models/us/ -kn
 
 Required arguments:
-  -f IN_FEATURES_DIR path to a directory containing CSV files of statistically-analyzed
+  -i IN_FEATURES_DIR path to a directory containing CSV files of statistically-analyzed
                        pcap files
-  -m OUT_MODELS_DIR  path to the directory to put the generated models; this directory
+  -o OUT_MODELS_DIR  path to the directory to put the generated models; this directory
                        will be created if it does not exist
 
 Optional arguments:
@@ -77,7 +82,7 @@ Optional arguments:
 
 Note: If no model is chosen, all of the models will be produced.
 
-For more information, see the README or model_details.md.""".format(prog_name=path)
+For more information, see the README or model_details.md.""".format(prog_name=PATH)
 
 
 #isError is either 0 or 1
@@ -92,8 +97,8 @@ def main():
 
     # Parse Arguments
     parser = argparse.ArgumentParser(usage=usage_stm, add_help=False)
-    parser.add_argument("-f", dest="root_feature", default="")
-    parser.add_argument("-m", dest="root_model", default="")
+    parser.add_argument("-i", dest="root_feature", default="")
+    parser.add_argument("-o", dest="root_model", default="")
     parser.add_argument("-d", dest="dbscan", action="store_true", default=False)
     parser.add_argument("-k", dest="kmeans", action="store_true", default=False)
     parser.add_argument("-n", dest="knn", action="store_true", default=False)
@@ -105,7 +110,7 @@ def main():
     if args.help:
         print_usage(0)
 
-    print("Running %s..." % path)
+    print("Running %s..." % PATH)
 
     # Error checking command line args
     done = False
@@ -114,8 +119,7 @@ def main():
         print("%s%s: Error: Features directory (-f) required.%s" % (RED, path, END), file=sys.stderr)
     elif not os.path.isdir(args.root_feature):
         done = True
-        print("%s%s: Error: The features directory \"%s\" is not a directory.%s"
-              % (RED, path, args.root_features, END), file=sys.stderr)
+        print("%s%s: Error: The features directory \"%s\" does not exist.%s" % (RED, path, args.root_features, END), file=sys.stderr)
     else:
         root_feature = args.root_feature
 
@@ -182,8 +186,7 @@ def train_models():
     t0 = time.time()
     list_results = p.map(eid_wrapper, lparas)
     for ret in list_results:
-        if ret is None or len(ret) == 0:
-            continue
+        if ret is None or len(ret) == 0: continue
         for res in ret:
             tmp_outfile = res[0]
             tmp_res = res[1:]
@@ -191,8 +194,7 @@ def train_models():
                 off.write('%s\n' % '\t'.join(map(str, tmp_res)))
                 print('Agg saved to %s' % tmp_outfile)
     t1 = time.time()
-    print('Time to train all models for %s devices using %s threads: %.2f'
-          % (len(lparas), num_pools, (t1 - t0)))
+    print('Time to train all models for %s devices using %s threads: %.2f' % (len(lparas),num_pools, (t1 - t0)))
     # p.map(target=eval_individual_device, args=(lfiles, ldnames))
 
 
@@ -203,8 +205,8 @@ def eid_wrapper(a):
 def eval_individual_device(train_data_file, dname, specified_models=None):
     global root_feature, root_model, root_output, dir_tsne_plots
     """
-    Assumptions: the train_data_file contains only 1 device, all possible states(tags);
-    the models can only be one of the implementated: knn, kmeans, dbscan, random forest classifier
+    Assumptions: the train_data_file contains only 1 device, all possible states(tags); the models can only be 
+    one of the implementated: knn, kmeans, dbscan, random forest classifier  
     """
     warnings.simplefilter("ignore", category=DeprecationWarning)
     warnings.simplefilter("ignore", category=FutureWarning)
@@ -222,6 +224,7 @@ def eval_individual_device(train_data_file, dname, specified_models=None):
         """
         model_dir = '%s/%s' % (root_model, model_alg)
         model_file = '%s/%s%s.model' % (model_dir, dname, model_alg)
+        label_file = '%s/%s.label.txt' % (model_dir, dname)
         if not os.path.exists(model_file) and os.path.exists(train_data_file):
             # check .model
             # check if training data set is available
@@ -230,15 +233,13 @@ def eval_individual_device(train_data_file, dname, specified_models=None):
     if len(list_models_todo) < 1:
         print('skip %s, all models trained for alg: %s' % (dname, str(list_all_models)))
         return
-
     print('Training %s using algorithm(s): %s' % (dname, str(list_models_todo)))
     train_data = pd.read_csv(train_data_file)
 
     num_data_points = len(train_data)
     if num_data_points < 1:
-        print('  No enough data points for %s' % dname)
+        print('  Not enough data points for %s' % dname)
         return
-
     print('\t#Total data points: %d ' % num_data_points)
     X_feature = train_data.drop(['device', 'state'], axis=1).fillna(-1)
     ss= StandardScaler()
@@ -254,8 +255,7 @@ def eval_individual_device(train_data_file, dname, specified_models=None):
     """
     Split data set into train & test, default fraction is 30% test
     """
-    X_train, X_test, y_train, y_test = train_test_split(
-            X_feature, y_labels, test_size=.3, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X_feature, y_labels, test_size=.3, random_state=42)
     print('Train: %s' % len(X_train))
     print('Test: %s' % len(X_test))
 
@@ -313,8 +313,7 @@ def eval_individual_device(train_data_file, dname, specified_models=None):
 
         elif model_alg == 'spectral':
             print('  Spectral Clustering: n_clusters=%s' % num_lables)
-            trained_model = SpectralClustering(n_clusters=num_lables,
-                    affinity='nearest_neighbors', random_state=0)
+            trained_model = SpectralClustering(n_clusters=num_lables, affinity='nearest_neighbors', random_state=0)
             trained_model.fit(X_train)
 
             y_predicted_1d = trained_model.fit_predict(X_test).round()
@@ -384,9 +383,8 @@ def eval_individual_device(train_data_file, dname, specified_models=None):
         """
         # TODO: due to the multi-thread, needs to change the settings
         with open(single_outfile, 'a+') as off:
-            off.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n'
-                       % (dname, _acc_score, _homogeneity, _complete,
-                          _vmeasure, _ari, _noise, _silhouette))
+            off.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' % (dname, _acc_score, _homogeneity, _complete,
+                                                            _vmeasure, _ari, _noise, _silhouette))
             # y_test_bin_1d, y_predicted_1d
             off.write('%s\n' % ','.join(map(str, y_test_bin_1d)))
             off.write('%s\n' % ','.join(map(str, y_predicted_1d)))
@@ -396,7 +394,7 @@ def eval_individual_device(train_data_file, dname, specified_models=None):
         """
         Print to Terminal 
         """
-        print('    model -> %s' % model_file)
+        print('    model -> %s' % (model_file))
         print('    labels -> %s' % label_file)
         print('\t' + '\n\t'.join(unique_labels) + '\n')
         if model_alg not in ['rf']:
@@ -425,10 +423,10 @@ def tsne_plot(X, y, figfile, pp=30):
     plot_data = pd.DataFrame(X_2d, columns=['x', 'y'])
     plot_data['cluster_label'] = y
     # print(plot_data.head())
-    plt.figure()
+    fig = plt.figure()
     ax = plt.subplot(111)
     for yi, g in plot_data.groupby('cluster_label'):
-        g.drop('cluster_label', axis=1)
+        g2 = g.drop('cluster_label', axis=1)
         if yi == -1:
             plt.scatter(g.x, g.y, label='cluster_%s' % yi, marker='*')
         else:

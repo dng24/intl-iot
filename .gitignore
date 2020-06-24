@@ -12,10 +12,8 @@ encryption/validation/key.key
 encryption/sample.csv
 encryption/sample.json
 model/.ipynb_checkpoints/
-model/features/
-model/tagged-intermediate/
-model/tagged-models/
+model/__pycache__/
+model/results/
 model/traffic/
-model/user-intermediates/
-model/results.csv
 .DS_Store
+
