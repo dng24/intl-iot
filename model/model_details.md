@@ -108,6 +108,28 @@ This script produces a CSV file that contains the prediction of the state of the
 - `state` - The predicted state that the device was in when `IN_PCAP` was created.
 - `device` - The input into the `-v` option.
 
+### src/s1_split_data.py
+
+This script is the first step of the model pipeline and the first step in data preprocessing phase. The script takes a directory of pcaps recursively and randomly splits the pcaps into a training set and a testing set.
+
+#### Usage
+
+Usage: `python3 s1_split_data.py in_pcap_dir out_train_file out_test_file`
+
+Example: `python3 s1_split_data.py traffic/ s1_train_paths.txt s1_test_paths.txt`
+
+#### Input
+
+`in_pcap_dir` - The path to a directory containing input pcap files. Pcap files found in nested directories will also be processed.
+
+`out_train_file` - The path to a text (.txt) file to write the filenames of training files. This file will be generated if it does not already exist.
+
+`out_test_file` - The path to a text (.txt) file to write the filenames of testing files. This file will be generated if it does not already exist.
+
+#### Output
+
+Two newline-delimited text files are produced, one of which contains file paths to pcaps for training models, while the other one contains file paths to pcaps for validating the models. Two-thirds of the pcap paths will be randomly selected and written to the training text file, while the rest will be written to the testing text file. If an existing text file is passed in, none of the paths in that text file will be written again to either text file.
+
 ### raw2intermediate.sh
 
 #### Usage

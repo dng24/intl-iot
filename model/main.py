@@ -3,11 +3,11 @@ import os
 import time
 import argparse
 
-import Constants as c
+from src import Constants as c
 
 #is_error is either 0 or 1
 def print_usage(is_error):
-    print(c.USAGE_STM, file=sys.stderr) if is_error else print(c.USAGE_STM)
+    print(c.MAIN_USAGE, file=sys.stderr) if is_error else print(c.MAIN_USAGE)
     exit(is_error)
 
 
@@ -67,7 +67,7 @@ def main():
     start_time = time.time()
     
     #Options
-    parser = argparse.ArgumentParser(usage=c.USAGE_STM, add_help=False)
+    parser = argparse.ArgumentParser(usage=c.MAIN_USAGE, add_help=False)
     parser.add_argument("-i", dest="tagged_dir", default="")
     parser.add_argument("-u", dest="untagged_dir", default="")
     parser.add_argument("-d", dest="models", action="append_const", const="d")
@@ -87,14 +87,12 @@ def main():
           % (c.PATH, time.strftime("%A %d %B %Y %H:%M:%S %Z", time.localtime(start_time))))
     # Thursday 11 June 2020 11:37:02 EDT
 
-    if len(args.models) == 0:
-        args.models.extend(["d", "k", "n", "r", "s"])
+    if args.models == None:
+        args.models = ["d", "k", "n", "r", "s"]
 
     #Error checking and script checks
     #check scripts
-    errors = check_files(c.DATA_PREPROC_DIR, [c.SPLIT_DATA, c.RAW2INT, c.EXT_FEAT])
-    errors = check_files(c.MOD_DEV_DIR, [c.EVAL_MOD, c.ANOM_DETECT]) or errors
-    errors = check_files(c.PREDICT_DIR, [c.SLIDE_SPLIT, c.ANOM_PREDICT]) or errors
+    errors = check_files(c.SRC_DIR, c.SCRIPTS)
 
     #check -i tagged dir
     if args.tagged_dir == "":
@@ -152,30 +150,30 @@ def main():
     print_step("\nStep 1: Spliting pcaps into training and testing sets...\n$ %s" % cmd)
     run_cmd(cmd, c.SPLIT_DATA)
 
-    cmd = "%s %s %s" % (c.RAW2INT, c.TRAIN_PATHS, c.IMD_TRAIN_DIR)
+    cmd = "%s %s %s" % (c.DEC_RAW, c.TRAIN_PATHS, c.DEC_TRAIN_DIR)
     print_step("\nStep 2.1: Decoding training pcaps into human-readable form...\n$ %s" % cmd)
-    run_cmd(cmd, c.RAW2INT)
+    run_cmd(cmd, c.DEC_RAW)
 
-    cmd = "%s %s %s" % (c.RAW2INT, c.TEST_PATHS, c.IMD_TEST_DIR)
+    cmd = "%s %s %s" % (c.DEC_RAW, c.TEST_PATHS, c.DEC_TEST_DIR)
     print_step("\nStep 2.2: Decoding testing pcaps into human-readable form...\n$ %s" % cmd)
-    run_cmd(cmd, c.RAW2INT)
+    run_cmd(cmd, c.DEC_RAW)
 
-    cmd = "python3 %s %s %s" % (c.EXT_FEAT, c.IMD_TRAIN_DIR, c.FEAT_TRAIN_DIR)
+    cmd = "python3 %s %s %s" % (c.GET_FEAT, c.DEC_TRAIN_DIR, c.FEAT_TRAIN_DIR)
     print_step("\nStep 3.1: Performing statistical analysis on training set...\n$ %s" % cmd)
-    run_cmd(cmd, c.EXT_FEAT)
+    run_cmd(cmd, c.GET_FEAT)
 
-    cmd = "python3 %s %s %s" % (c.EXT_FEAT, c.IMD_TEST_DIR, c.FEAT_TEST_DIR)
+    cmd = "python3 %s %s %s" % (c.GET_FEAT, c.DEC_TEST_DIR, c.FEAT_TEST_DIR)
     print_step("\nStep 3.2: Performing statistical analysis on testing set...\n$ %s" % cmd)
-    run_cmd(cmd, c.EXT_FEAT)
+    run_cmd(cmd, c.GET_FEAT)
 
     models = "".join(args.models)
     cmd = "python3 %s -i %s -o %s -%s" % (c.EVAL_MOD, c.FEAT_TRAIN_DIR, c.MODELS_DIR, models)
     print_step("\nStep 4: Training data and creating model(s)...\n$ %s" % cmd)
     run_cmd(cmd, c.EVAL_MOD)
 
-    cmd = "python3 %s %s %s" % (c.ANOM_DETECT, c.FEAT_TRAIN_DIR, c.MODELS_DIR)
+    cmd = "python3 %s %s %s" % (c.FIND_ANOM, c.FEAT_TRAIN_DIR, c.MODELS_DIR)
     print_step("\nStep 5: Detecting anomalies in the model(s)...\n$ %s" % cmd)
-    run_cmd(cmd, c.ANOM_DETECT)
+    run_cmd(cmd, c.FIND_ANOM)
 
     if args.untagged_dir != "":
         cmd = "find %s -name \"*.pcap\"" % args.untagged_dir
@@ -183,22 +181,22 @@ def main():
         run_cmd("%s | tee %s" % (cmd, c.NEW_PATHS), "find command")
         print("Untagged pcap filenames written to %s" % c.NEW_PATHS)
 
-        cmd = "%s %s %s" % (c.RAW2INT, c.NEW_PATHS, c.NEW_IMD_DIR)
+        cmd = "%s %s %s" % (c.DEC_RAW, c.NEW_PATHS, c.NEW_DEC_DIR)
         print_step("\nStep 7: Decoding untagged pcaps into human-readable form...\n$ %s" % cmd)
-        run_cmd(cmd, c.RAW2INT)
+        run_cmd(cmd, c.DEC_RAW)
 
-        cmd = "python3 %s %s %s" % (c.SLIDE_SPLIT, c.NEW_IMD_DIR, c.NEW_IMD_SPLIT_DIR)
+        cmd = "python3 %s %s %s" % (c.SLIDE_SPLIT, c.NEW_DEC_DIR, c.NEW_DEC_SPLIT_DIR)
         print_step("\nStep 8: Organizing decoded pcaps...\n$ %s" % cmd)
         run_cmd(cmd, c.SLIDE_SPLIT)
 
-        cmd = "python3 %s %s %s" % (c.EXT_FEAT, c.NEW_IMD_SPLIT_DIR, c.NEW_FEAT_DIR)
+        cmd = "python3 %s %s %s" % (c.GET_FEAT, c.NEW_DEC_SPLIT_DIR, c.NEW_FEAT_DIR)
         print_step("\nStep 9: Performing statistical analysis on untagged pcaps...\n$ %s" % cmd)
-        run_cmd(cmd, c.EXT_FEAT)
+        run_cmd(cmd, c.GET_FEAT)
         
-        cmd = "python3 %s %s %s %s " % (c.ANOM_PREDICT, c.NEW_FEAT_DIR, c.MODELS_DIR, c.RESULTS_DIR)
+        cmd = "python3 %s %s %s %s " % (c.PREDICT, c.NEW_FEAT_DIR, c.MODELS_DIR, c.RESULTS_DIR)
         print_step("\nStep 10: Predicting device activity...\n$ %s" % cmd)
         print("Step 10 TBD......")
-        #run_cmd(cmd, c.ANOM_PREDICT)
+        #run_cmd(cmd, c.PREDICT)
 
     #Calculate elapsed time
     end_time = time.time()

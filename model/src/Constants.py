@@ -6,16 +6,16 @@ PATH = sys.argv[0]
 MODEL_DIR = os.path.dirname(PATH)
 if MODEL_DIR == "":
     MODEL_DIR = "."
-DATA_PREPROC_DIR = MODEL_DIR + "/data-preprocessing/"
-SPLIT_DATA = DATA_PREPROC_DIR + "split_data.py"
-RAW2INT = DATA_PREPROC_DIR + "raw2intermediate.sh"
-EXT_FEAT = DATA_PREPROC_DIR + "extract_features.py"
-MOD_DEV_DIR = MODEL_DIR + "/model-development/"
-EVAL_MOD = MOD_DEV_DIR + "eval_models.py"
-ANOM_DETECT = MOD_DEV_DIR + "anomaly_detection.py"
-PREDICT_DIR = MODEL_DIR + "/new-data-prediction/"
-SLIDE_SPLIT = PREDICT_DIR + "sliding_split.py"
-ANOM_PREDICT = PREDICT_DIR + "anomaly_predict_newdata.py"
+SRC_DIR = MODEL_DIR + "/src/"
+SPLIT_DATA = SRC_DIR + "s1_split_data.py"
+DEC_RAW = SRC_DIR + "s2_7_decode_raw.sh"
+GET_FEAT = SRC_DIR + "s3_9_get_features.py"
+EVAL_MOD = SRC_DIR + "s4_eval_model.py"
+FIND_ANOM = SRC_DIR + "s5_find_anomalies.py"
+SLIDE_SPLIT = SRC_DIR + "s8_slide_split.py"
+PREDICT = SRC_DIR + "s10_predict.py"
+
+SCRIPTS = [SPLIT_DATA, DEC_RAW, GET_FEAT, EVAL_MOD, FIND_ANOM, SLIDE_SPLIT, PREDICT]
 
 #output paths
 OUT_DIR = "results/"
@@ -24,18 +24,18 @@ for i, arg in enumerate(sys.argv):
         OUT_DIR = sys.argv[i]
         break
 
-TRAIN_PATHS = os.path.join(OUT_DIR, "step1_training_paths.txt")
-TEST_PATHS = os.path.join(OUT_DIR, "step1_testing_paths.txt")
-IMD_TRAIN_DIR = os.path.join(OUT_DIR, "step2.1-tagged-intermediates-train/")
-IMD_TEST_DIR = os.path.join(OUT_DIR, "step2.2-tagged-intermediates-test/")
-FEAT_TRAIN_DIR = os.path.join(OUT_DIR, "step3.1-tagged-features-train/")
-FEAT_TEST_DIR = os.path.join(OUT_DIR, "step3.2-tagged-features-test/")
-MODELS_DIR = os.path.join(OUT_DIR, "step4-5-tagged-models/")
-NEW_PATHS = os.path.join(OUT_DIR, "step6_untagged_paths.txt")
-NEW_IMD_DIR = os.path.join(OUT_DIR, "step7-untagged-intermediates/")
-NEW_IMD_SPLIT_DIR = os.path.join(OUT_DIR, "step8-untagged-intermediates-split/")
-NEW_FEAT_DIR = os.path.join(OUT_DIR, "step9-untagged-features/")
-RESULTS_DIR = os.path.join(OUT_DIR, "step10-results/")
+TRAIN_PATHS = os.path.join(OUT_DIR, "s1_train_paths.txt")
+TEST_PATHS = os.path.join(OUT_DIR, "s1_test_paths.txt")
+DEC_TRAIN_DIR = os.path.join(OUT_DIR, "s2.1-train-decoded/")
+DEC_TEST_DIR = os.path.join(OUT_DIR, "s2.2-test-decoded/")
+FEAT_TRAIN_DIR = os.path.join(OUT_DIR, "s3.1-train-features/")
+FEAT_TEST_DIR = os.path.join(OUT_DIR, "s3.2-test-features/")
+MODELS_DIR = os.path.join(OUT_DIR, "s4-5-models/")
+NEW_PATHS = os.path.join(OUT_DIR, "s6_untagged_paths.txt")
+NEW_DEC_DIR = os.path.join(OUT_DIR, "s7-untagged-decoded/")
+NEW_DEC_SPLIT_DIR = os.path.join(OUT_DIR, "s8-untagged-decoded-split/")
+NEW_FEAT_DIR = os.path.join(OUT_DIR, "s9-untagged-features/")
+RESULTS_DIR = os.path.join(OUT_DIR, "s10-results/")
 
 #basics
 RED = "\033[31;1m"
@@ -44,6 +44,7 @@ END = "\033[0m"
 BEG = RED + PATH + ": Error: "
 
 #basic errors
+WRONG_NUM_ARGS = BEG + "%d arguments required. %d arguments found." + END
 MISSING = BEG + "The \"%s\" %s is missing.\n"\
           "    Please make sure it is in the \"%s\" directory." + END
 NO_PERM = BEG + "The %s \"%s\" does not have %s permission." + END
@@ -56,7 +57,8 @@ NON_POS = BEG + "The number of processes must be a positive integer. Received \"
 SCRIPT_FAIL = BEG + "Something went wrong with \"%s\". Exit status \"%d\".\n"\
               "    Please make sure you have properly set up your environment." + END
 
-USAGE_STM = """
+#main.py usage
+MAIN_USAGE = """
 Usage: {prog_name} [OPTION]...
 
 Predicts the device activity of a pcap file using a machine learning model
@@ -99,3 +101,20 @@ Notes:
  - If no model is specified to be generated, all five models will be generated.
 
 For more information, see the README and model_details.md.""".format(prog_name=PATH)
+
+#data-preprocessing/split_data.py usage
+SPLIT_DAT_USAGE = """
+Usage: python3 {prog_name} in_pcap_dir out_train_file out_test_file
+
+Recursively splits the pcaps in a directory into a training set and a testing set.
+
+Example: python3 {prog_name} traffic/ s1_train_paths.txt s1_test_paths.txt
+
+Arguments:
+  in_pcap_dir:    path to a directory containing pcap files
+  out_train_file: path to a text file to write the filenames of training files;
+                    file will be generate if it does not already exist
+  out_test_file:  path to a text file to write the filenames of testing files;
+                    file will be generated if it does not already exist
+
+For more information, see the README or model_details.md""".format(prog_name=PATH)
