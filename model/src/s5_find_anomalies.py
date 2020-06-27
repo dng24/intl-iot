@@ -102,12 +102,6 @@ for i, j in enumerate(lparas):
     valid['state'] = valid['state'].apply(lambda x: 1 if x == 'anomaly' else 0)
     test['state'] = test['state'].apply(lambda x: 1 if x == 'anomaly' else 0)
 
-    # print('Train shape: ', train.shape)
-    # print('Proportion os anomaly in training set: %.2f\n' % train['state'].mean())
-    # print('Valid shape: ', valid.shape)
-    # print('Proportion os anomaly in validation set: %.2f\n' % valid['state'].mean())
-    # print('Test shape:, ', test.shape)
-    # print('Proportion os anomaly in test set: %.2f\n' % test['state'].mean())
 
     # Training the model
     mu = train.drop('state', axis=1).mean(axis=0).values
