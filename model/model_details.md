@@ -138,7 +138,7 @@ This script is the second and seventh steps of the model pipeline and the second
 
 Usage: `python3 s2_7_decode_raw.py exp_list out_imd_dir [num_proc]`
 
-Example: `python3 s2_7_decode_raw.py exp_list.txt tagged-intermediate/us/ 4`
+Example: `python3 s2_7_decode_raw.py exp_list.txt tagged-decoded/us/ 4`
 
 #### Input
 
@@ -154,25 +154,27 @@ A plain-text file will be produced for every input pcap (.pcap) file. Each outpu
 
 If an output file already exists, TShark will not run with its corresponding input file, and the existing output file will remain. If TShark cannot read the input file, no output file will be produced.
 
-### extract_features.py
+### src/3_9_get_features.py
 
 #### Usage
 
-Usage: `python3 extract_features.py in_imd_dir out_features_dir`
+This script is the third and ninth steps of the model pipeline, the third step of the data preprocessing phase, and the fourth step of the prediction phase. The script uses the decoded pcap data output from `s2_7_decoded_raw.py` to perform data analysis to get features.
 
-Example: `python3 extract_features.py tagged-intermediate/us/ features/us/`
+Usage: `python3 s3_9_get_features.py in_dec_dir out_features_dir [num_proc]`
 
-This script uses the human-readable pcap data output from `raw2intermediate.sh` to perform data analysis.
+Example: `python3 extract_features.py tagged-decoded/us/ features/us/ 4`
 
 #### Input
 
-`in_imd_dir` - The path to a directory containing text files of human-readable raw pcap data.
+`in_dec_dir` - The path to a directory containing text files of human-readable raw pcap data.
 
 `out_features_dir` - The path to the directory to write the analyzed CSV files. If this directory current does not exist, it will be generated.
 
+`num_proc` - The number of processes to use to generate the feature files.
+
 #### Output
 
-Each valid input text (.txt) file in the input directory will be analyzed, and a CSV file containing statistical analysis will be produced in a `cache/` directory in `out_features_dir`. After each input file is processed, all the CSV files of each device will be concatenated together in a separate CSV file, which will be placed in `out_features_dir`.
+Each valid input text (.txt) file in the input directory will be analyzed, and a CSV file containing statistical analysis will be produced in a `cache/` directory in `out_features_dir`. The name of this file is a sanitized version of the input file path. After each input file is processed, all the CSV files of each device will be concatenated together in a separate CSV file, named {device}.csv, which will be placed in `out_features_dir`.
 
 If a device already has a concatenated CSV file located in `out_features_dir`, no analysis will occur for that device, and the existing file will remain. If a device does not have a concatenated CSV file, the script will regenerate any cache files, as necessary, and the cache files of the device will be concatenated. If an input file is not a text (.txt) file, no output will be produced for that file.
 

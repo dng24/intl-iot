@@ -150,19 +150,19 @@ def main():
     print_step("\nStep 1: Spliting pcaps into training and testing sets...\n$ %s" % cmd)
     run_cmd(cmd, c.SPLIT_DATA)
 
-    cmd = "%s %s %s" % (c.DEC_RAW, c.TRAIN_PATHS, c.DEC_TRAIN_DIR)
+    cmd = "python3 %s %s %s %d" % (c.DEC_RAW, c.TRAIN_PATHS, c.DEC_TRAIN_DIR, num_proc)
     print_step("\nStep 2.1: Decoding training pcaps into human-readable form...\n$ %s" % cmd)
     run_cmd(cmd, c.DEC_RAW)
 
-    cmd = "%s %s %s" % (c.DEC_RAW, c.TEST_PATHS, c.DEC_TEST_DIR)
+    cmd = "python3 %s %s %s %d" % (c.DEC_RAW, c.TEST_PATHS, c.DEC_TEST_DIR, num_proc)
     print_step("\nStep 2.2: Decoding testing pcaps into human-readable form...\n$ %s" % cmd)
     run_cmd(cmd, c.DEC_RAW)
 
-    cmd = "python3 %s %s %s" % (c.GET_FEAT, c.DEC_TRAIN_DIR, c.FEAT_TRAIN_DIR)
+    cmd = "python3 %s %s %s %d" % (c.GET_FEAT, c.DEC_TRAIN_DIR, c.FEAT_TRAIN_DIR, num_proc)
     print_step("\nStep 3.1: Performing statistical analysis on training set...\n$ %s" % cmd)
     run_cmd(cmd, c.GET_FEAT)
 
-    cmd = "python3 %s %s %s" % (c.GET_FEAT, c.DEC_TEST_DIR, c.FEAT_TEST_DIR)
+    cmd = "python3 %s %s %s %d" % (c.GET_FEAT, c.DEC_TEST_DIR, c.FEAT_TEST_DIR, num_proc)
     print_step("\nStep 3.2: Performing statistical analysis on testing set...\n$ %s" % cmd)
     run_cmd(cmd, c.GET_FEAT)
 
@@ -181,7 +181,7 @@ def main():
         run_cmd("%s | tee %s" % (cmd, c.NEW_PATHS), "find command")
         print("Untagged pcap filenames written to %s" % c.NEW_PATHS)
 
-        cmd = "%s %s %s" % (c.DEC_RAW, c.NEW_PATHS, c.NEW_DEC_DIR)
+        cmd = "python3 %s %s %s %d" % (c.DEC_RAW, c.NEW_PATHS, c.NEW_DEC_DIR, num_proc)
         print_step("\nStep 7: Decoding untagged pcaps into human-readable form...\n$ %s" % cmd)
         run_cmd(cmd, c.DEC_RAW)
 
@@ -189,7 +189,7 @@ def main():
         print_step("\nStep 8: Organizing decoded pcaps...\n$ %s" % cmd)
         run_cmd(cmd, c.SLIDE_SPLIT)
 
-        cmd = "python3 %s %s %s" % (c.GET_FEAT, c.NEW_DEC_SPLIT_DIR, c.NEW_FEAT_DIR)
+        cmd = "python3 %s %s %s %d" % (c.GET_FEAT, c.NEW_DEC_SPLIT_DIR, c.NEW_FEAT_DIR, num_proc)
         print_step("\nStep 9: Performing statistical analysis on untagged pcaps...\n$ %s" % cmd)
         run_cmd(cmd, c.GET_FEAT)
         

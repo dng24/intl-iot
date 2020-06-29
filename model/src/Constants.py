@@ -8,7 +8,7 @@ if MODEL_DIR == "":
     MODEL_DIR = "."
 SRC_DIR = MODEL_DIR + "/src/"
 SPLIT_DATA = SRC_DIR + "s1_split_data.py"
-DEC_RAW = SRC_DIR + "s2_7_decode_raw.sh"
+DEC_RAW = SRC_DIR + "s2_7_decode_raw.py"
 GET_FEAT = SRC_DIR + "s3_9_get_features.py"
 EVAL_MOD = SRC_DIR + "s4_eval_model.py"
 FIND_ANOM = SRC_DIR + "s5_find_anomalies.py"
@@ -121,17 +121,35 @@ For more information, see the README or model_details.md""".format(prog_name=PAT
 
 #decocde_raw.py usage
 DEC_RAW_USAGE = """
-Usage: python3 {prog_name} exp_list out_imd_dir [num_proc]
+Usage: python3 {prog_name} exp_list out_dec_dir [num_proc]
 
 Decodes raw pcap data into human-readable text files.
 
-Example: python3 {prog_name} exp_list.txt tagged-intermediate/us/ 4
+Example: python3 {prog_name} exp_list.txt tagged-decoded/us/ 4
 
 Arguments:
   exp_list:    a text file containing the file paths to pcap files to decode; pcap
                  paths must be formatted as .../{{device}}/{{activity}}/{{filename}}.pcap
-  out_imd_dir: path to the directory to place the decoded output; directory will be
+  out_dec_dir: path to the directory to place the decoded output; directory will be
                  generated if it does not already exist
   num_proc:    number of processes to use to decode the pcaps (Default = 1)
 
 For more information, see model_details.md.""".format(prog_name=PATH)
+
+#get_features.py usage
+GET_FEAT_USAGE = """
+Usage: python3 {prog_name} in_dec_dir out_features_dir [num_proc]
+
+Performs statistical analysis on decoded pcap files to generate feature files.
+
+Example: python3 {prog_name} tagged-decoded/us/ features/us/ 4
+
+Arguments:
+  in_dec_dir:   path to a directory containing text files of decoded pcap data
+  out_feat_dir: path to the directory to write the analyzed CSV files;
+                      directory will be generated if it does not already exist
+  num_proc:     number of processes to use to generate feature files
+                      (Default = 1)
+
+For more information, see the README or model_details.md.""".format(prog_name=PATH)
+
