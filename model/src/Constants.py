@@ -57,6 +57,10 @@ NON_POS = BEG + "The number of processes must be a positive integer. Received \"
 SCRIPT_FAIL = BEG + "Something went wrong with \"%s\". Exit status \"%d\".\n"\
               "    Please make sure you have properly set up your environment." + END
 
+#eval_model.py errors
+NO_FEAT_DIR = BEG + "Features directory (-i) required." + END
+NO_MOD_DIR = BEG + "Model directory (-o) required." + END
+
 #main.py usage
 MAIN_USAGE = """
 Usage: {prog_name} [OPTION]...
@@ -153,3 +157,29 @@ Arguments:
 
 For more information, see the README or model_details.md.""".format(prog_name=PATH)
 
+#eval_models.py usage
+EVAL_MOD_USAGE = """
+Usage: python3 {prog_name} -i IN_FEATURES_DIR -o OUT_MODELS_DIR [-dknrs]
+
+Trains anaylzed pcap files and produces one or more models using different algorithms
+that can predict device activity.
+
+Example: python3 {prog_name} -i features/us/ -o tagged-models/us/ -kn
+
+Required arguments:
+  -i IN_FEATURES_DIR path to a directory containing CSV files of statistically-analyzed
+                       pcap files
+  -o OUT_MODELS_DIR  path to the directory to put the generated models; this directory
+                       will be created if it does not exist
+
+Optional arguments:
+  -d produce a model using the dbscan algorithm
+  -k produce a model using the kmeans algorithm
+  -n produce a model using the knn algorithm
+  -r produce a model using the rf algorithm
+  -s produce a model using the spectral algorithm
+  -h print this usage statement and exit
+
+Note: If no model is chosen, all of the models will be produced.
+
+For more information, see the README or model_details.md.""".format(prog_name=PATH)
