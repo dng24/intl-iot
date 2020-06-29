@@ -178,21 +178,21 @@ Each valid input text (.txt) file in the input directory will be analyzed, and a
 
 If a device already has a concatenated CSV file located in `out_features_dir`, no analysis will occur for that device, and the existing file will remain. If a device does not have a concatenated CSV file, the script will regenerate any cache files, as necessary, and the cache files of the device will be concatenated. If an input file is not a text (.txt) file, no output will be produced for that file.
 
-### eval_models.py
+### src/s4_eval_model.py
+
+This script is the fourth step of the model pipeline and the first step of the model development phase. The script trains analyzed pcap data and generates one or more models that can be used to predict device activity.
 
 #### Usage
 
-Usage: `python3 eval_models.py -f IN_FEATURES_DIR -m OUT_MODELS_DIR [-dknrs]`
+Usage: `python3 s4_eval_model.py -i IN_FEATURES_DIR -o OUT_MODELS_DIR [-dknrs]`
 
-Example: `python3 eval_models.py -f features/us/ -m tagged-models/us/ -kn`
-
-This script trains analyzed pcap data and generates one or more models that can predict device activity.
+Example: `python3 s4_eval_model.py -i features/us/ -o tagged-models/us/ -kn`
 
 #### Input
 
-`-f IN_FEATURES_DIR` - The path to a directory containing CSV files that have analyzed pcap data. This option is required.
+`-i IN_FEATURES_DIR` - The path to a directory containing CSV files that have analyzed pcap data. This option is required.
 
-`-m OUT_MODELS_DIR` - The path to the directory to place the generated model. If this directory currently does not exist, it will be generated. This option is required.
+`-o OUT_MODELS_DIR` - The path to the directory to place the generated model. If this directory currently does not exist, it will be generated. This option is required.
 
 `-d` - Generate a model using the DBSCAN algorithm.
 
