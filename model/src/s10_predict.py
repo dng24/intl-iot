@@ -194,5 +194,6 @@ def main():
                 run_process(device_path, result_path,base_model_path,anomaly_model_path )
                 print("__________________________________________")
 
+
 if __name__ == '__main__':
     main()
