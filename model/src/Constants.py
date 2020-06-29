@@ -102,7 +102,7 @@ Notes:
 
 For more information, see the README and model_details.md.""".format(prog_name=PATH)
 
-#data-preprocessing/split_data.py usage
+#split_data.py usage
 SPLIT_DAT_USAGE = """
 Usage: python3 {prog_name} in_pcap_dir out_train_file out_test_file
 
@@ -118,3 +118,20 @@ Arguments:
                     file will be generated if it does not already exist
 
 For more information, see the README or model_details.md""".format(prog_name=PATH)
+
+#decocde_raw.py usage
+DEC_RAW_USAGE = """
+Usage: python3 {prog_name} exp_list out_imd_dir [num_proc]
+
+Decodes raw pcap data into human-readable text files.
+
+Example: python3 {prog_name} exp_list.txt tagged-intermediate/us/ 4
+
+Arguments:
+  exp_list:    a text file containing the file paths to pcap files to decode; pcap
+                 paths must be formatted as .../{{device}}/{{activity}}/{{filename}}.pcap
+  out_imd_dir: path to the directory to place the decoded output; directory will be
+                 generated if it does not already exist
+  num_proc:    number of processes to use to decode the pcaps (Default = 1)
+
+For more information, see model_details.md.""".format(prog_name=PATH)

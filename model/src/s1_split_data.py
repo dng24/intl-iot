@@ -16,6 +16,7 @@ def main():
     print("Running %s..." % c.PATH)
 
     #error checking
+    #check for 3 args
     if len(sys.argv) != 4:
         print(c.WRONG_NUM_ARGS % (3, (len(sys.argv) - 1)))
         print_usage(1)
@@ -25,6 +26,7 @@ def main():
     test_path = sys.argv[3]
 
     errors = False
+    #check input pcap directory
     if not os.path.isdir(pcap_dir):
         errors = True
         print(c.INVAL % ("Input pcap directory", pcap_dir, "directory"))
@@ -36,6 +38,7 @@ def main():
             errors = True
             print(c.NO_PERM % ("directory", pcap_dir, "execute"))
 
+    #check output text file
     for f in (train_path, test_path):
         if not f.endswith(".txt"):
             errors = True

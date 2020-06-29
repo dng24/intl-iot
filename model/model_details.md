@@ -65,7 +65,7 @@ This is the main script of the content analysis pipeline. The scripts listed bel
 
 #### Input
 
-`-i EXP_LIST` - The path to text file containing filepaths to the pcap files to be used to generate machine learning models. To see the format of this text file, please see the [exp_list.txt](#exp_listtxt) section below). Default is `exp_list.txt`.
+`-i EXP_LIST` - The path to text file containing filepaths to the pcap files to be used to generate machine learning models. To see the format of this text file, please see the [traffic/](#traffic) section below). Default is `exp_list.txt`.
 
 `-t IMD_DIR` - The path to the directory where the script will create and put decoded pcap files. Default is `tagged-intermediate/us/`.
 
@@ -85,7 +85,7 @@ This is the main script of the content analysis pipeline. The scripts listed bel
 
 `-p IN_PATH` - The path to the pcap file with unknown device activity. Default is `yi_camera_sample.pcap`.
 
-`-v DEV_NAME` - The name of the device that generated the data in `IN_PCAP`. This argument should match the name of a `device_name` directory (see the [exp_list.txt](#exp_listtxt) section below). Default is `yi-camera`.
+`-v DEV_NAME` - The name of the device that generated the data in `IN_PCAP`. This argument should match the name of a `device_name` directory (see the [traffic/](#traffic) section below). Default is `yi-camera`.
 
 `-l MODEL_NAME` - The name of the model to be used to predict the device activity of `IN_PCAP`.
 Choose from `kmeans`, `knn`, or `rf`. The DBSCAN and spectral clustering algorithms cannot be us
@@ -130,25 +130,27 @@ Example: `python3 s1_split_data.py traffic/ s1_train_paths.txt s1_test_paths.txt
 
 Two newline-delimited text files are produced, one of which contains file paths to pcaps for training models, while the other one contains file paths to pcaps for validating the models. Two-thirds of the pcap paths will be randomly selected and written to the training text file, while the rest will be written to the testing text file. If an existing text file is passed in, none of the paths in that text file will be written again to either text file.
 
-### raw2intermediate.sh
+### src/s2_7_decode_raw.py
 
 #### Usage
 
-Usage: `./raw2intermediate.sh exp_list out_imd_dir`
+This script is the second and seventh steps of the model pipeline and the second step in the data preprocessing and prediction phases. The script decodes data in pcap files (whose filenames are listed in a text file) into human-readable text files using TShark.
 
-Example: `./raw2intermediate.sh exp_list.txt tagged-intermediate/us/`
+Usage: `python3 s2_7_decode_raw.py exp_list out_imd_dir [num_proc]`
 
-This script decodes data in pcap files listed in the `exp_list` text file into human-readable text files using TShark.
+Example: `python3 s2_7_decode_raw.py exp_list.txt tagged-intermediate/us/ 4`
 
 #### Input
 
-`exp_list` - The text file that contains paths to input pcap files to generate the models. To see the format of this text file, please see the `exp_list.txt` section of [model_details.md](model_details.md#exp_listtxt).
+`exp_list` - The text file that contains paths to input pcap files to generate the models. To see the format of this text file, please see the [traffic/](#traffic) section below.
 
 `out_imd_dir` - The path to the directory where the script will create and put decoded pcap files. If this directory current does not exist, it will be generated.
 
+`num_proc` - The number of processes to use to decode the pcaps. Default is 1.
+
 #### Output
 
-A plain-text file will be produced for every input pcap (.pcap) file. Each output file contains a translation of the raw input file into human-readable form. The raw data output is tab-delimited and is stored in a text (.txt) file.
+A plain-text file will be produced for every input pcap (.pcap) file. Each output file contains a translation of the raw input file into human-readable form. The raw data output is tab-delimited and is stored in a text (.txt) file at `{out_imd_dir}/{device}/{activity}/{filename}.txt` (see the [traffic/](#traffic) section below for an explanation of `device` and `activity`.
 
 If an output file already exists, TShark will not run with its corresponding input file, and the existing output file will remain. If TShark cannot read the input file, no output file will be produced.
 
@@ -222,7 +224,7 @@ The script uses a model to predict the device activity given a pcap file from th
 
 `model_dir` - The path to the directory containing the directories of the models.
 
-`device_name` - The name of the device that generated the data in `pcap_path`. This argument should match the name of a `device_name` directory (see the [exp_list.txt](#exp_listtxt) section below).
+`device_name` - The name of the device that generated the data in `pcap_path`. This argument should match the name of a `device_name` directory (see the [traffic/](#traffic) section below).
 
 `model_name` - The name of the model to be used to predict the device activity in `pcap_path`. Choose from `kmeans`, `knn`, or `rf`.
 
@@ -233,17 +235,6 @@ The script uses a model to predict the device activity given a pcap file from th
 The script decodes the input pcap file and stores the decoded data in a `user-intermediates/` directory. If a file containing the decoded data already exists, the file will not be regenerated. The script then outputs a CSV file containing the predictions made by the selected model and the decoded data. If the output file already exists, the script will overwrite the file.
 
 ## Non-scripts
-
-### exp_list.txt
-
-A list of the paths to input pcap files with known device activity. The input files are used to generate the machine learning models; the more input files, the better the model. The directory structure of the input pcap files should be: `{root_experiment_director(y|ies)}/{device_name}/{activity_type}/input.pcap`. For example, `traffic/us/yi-camera/power/2019-04-25_19:28:58.154s.pcap`:
-
-- `traffic/us/` is the root experiment directory.
-- `yi-camera/` is the device directory.
-- `power/` is the activity type directory.
-- `2019-04-25_19:28:58.154s.pcap` is the input pcap file.
-
-Each path should be on a new line.
 
 ### model_sample.ipynb
 
@@ -271,5 +262,14 @@ A sample pcap file for demonstration that can be used to predict the device acti
 
 ### traffic/
 
-A directory with sample pcap files to generate a model. Note: To obtain these files, please follow the directions in the Download Datasets section in [Getting_Started.md](../Getting_Started.md#download-datasets)
+An input directory with sample pcap files to generate machine learning models. The more pcap files in an input directory, the better the model. **Every input directory should have the following structure: `{root_experiment_director(r|ies)}/{device}/{activity}/{filename}.pcap`.** For example, `traffic/us/yi-camera/power/2019-04-25_19:28:58.154s.pcap`:
+
+- `traffic/us/` is the root experiment directory.
+- `yi-camera/` is the device directory.
+- `power/` is the activity type directory.
+- `2019-04-25_19:28:58.154s.pcap` is the input pcap file.
+
+Each path should be on a new line.
+
+Note: To obtain the sample files in `traffic/`, please follow the directions in the Download Datasets section in [Getting_Started.md](../Getting_Started.md#download-datasets). If you have your own pcap files, you do not need to obatain these files.
 
