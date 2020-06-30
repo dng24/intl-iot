@@ -67,16 +67,16 @@ def main():
         print(c.INVAL % ("Input text file", in_txt, "file"), file=sys.stderr)
     elif not os.access(in_txt, os.R_OK):
         errors = True
-        print(c.NO_PERM % ("input text file", in_txt, "read"))
+        print(c.NO_PERM % ("input text file", in_txt, "read"), file=sys.stderr)
 
     #check out_dir
     if os.path.isdir(out_dir):
         if not os.access(out_dir, os.W_OK):
             errors = True
-            print(c.NO_PERM % ("output directory", out_dir, "write"))
+            print(c.NO_PERM % ("output directory", out_dir, "write"), file=sys.stderr)
         if not os.access(out_dir, os.X_OK):
             errors = True
-            print(c.NO_PERM % ("output directory", out_dir, "execute"))
+            print(c.NO_PERM % ("output directory", out_dir, "execute"), file=sys.stderr)
 
     #check num_proc
     bad_proc = False
@@ -89,7 +89,7 @@ def main():
         errors = bad_proc = True
 
     if bad_proc:
-        print(c.NON_POS % str_num_proc, file=sys.stderr)
+        print(c.NON_POS % ("number of processes", str_num_proc), file=sys.stderr)
 
     if errors:
         print_usage(1)

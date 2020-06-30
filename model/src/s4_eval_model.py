@@ -92,14 +92,14 @@ def main():
         print(c.NO_FEAT_DIR, file=sys.stderr)
     elif not os.path.isdir(root_feature):
         errors = True
-        print(c.INVAL % ("Features directory", root_features, "directory"), file=sys.stderr)
+        print(c.INVAL % ("Features directory", root_feature, "directory"), file=sys.stderr)
     else:
         if not os.access(root_feature, os.R_OK):
             errors = True
-            print(c.NO_PERM % ("features directory", root_features, "read"), file=sys.stderr)
+            print(c.NO_PERM % ("features directory", root_feature, "read"), file=sys.stderr)
         if not os.access(root_feature, os.X_OK):
             errors = True
-            print(c.NO_PERM % ("features directory", root_features, "execute"), file=sys.stderr)
+            print(c.NO_PERM % ("features directory", root_feature, "execute"), file=sys.stderr)
 
     #check -o out models
     if root_model == "":
