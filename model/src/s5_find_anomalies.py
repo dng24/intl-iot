@@ -193,7 +193,7 @@ def main():
             d = dict({'mvmodel': model, 'treshold': final_tresh})
             if not os.path.isdir("%s/model" % root_output):
                 os.system("mkdir -pv %s/model" % root_output)
-            f = open(f"{root_output}/model/multivariate_model.pkl", "wb")
+            f = open(f"{root_output}/multivariate_model_{lparas[i][1]}.pkl", "wb")
             pickle.dump(d, f)
             f.close()
 
@@ -216,4 +216,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
