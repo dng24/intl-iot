@@ -16,8 +16,9 @@ def main():
     print("Running %s..." % c.PATH)
 
     #error checking
+    #check for 3 args
     if len(sys.argv) != 4:
-        print(c.WRONG_NUM_ARGS % (3, (len(sys.argv) - 1)))
+        print(c.WRONG_NUM_ARGS % (3, (len(sys.argv) - 1)), file=sys.stderr)
         print_usage(1)
 
     pcap_dir = sys.argv[1]    
@@ -25,28 +26,30 @@ def main():
     test_path = sys.argv[3]
 
     errors = False
+    #check input pcap directory
     if not os.path.isdir(pcap_dir):
         errors = True
-        print(c.INVAL % ("Input pcap directory", pcap_dir, "directory"))
+        print(c.INVAL % ("Input pcap directory", pcap_dir, "directory"), file=sys.stderr)
     else:
         if not os.access(pcap_dir, os.R_OK):
             errors = True
-            print(c.NO_PERM % ("directory", pcap_dir, "read"))
+            print(c.NO_PERM % ("directory", pcap_dir, "read"), file=sys.stderr)
         if not os.access(pcap_dir, os.X_OK):
             errors = True
-            print(c.NO_PERM % ("directory", pcap_dir, "execute"))
+            print(c.NO_PERM % ("directory", pcap_dir, "execute"), file=sys.stderr)
 
+    #check output text file
     for f in (train_path, test_path):
         if not f.endswith(".txt"):
             errors = True
-            print(c.WRONG_EXT % ("Output file", "text (.txt)", f))
+            print(c.WRONG_EXT % ("Output file", "text (.txt)", f), file=sys.stderr)
         elif os.path.isfile(f):
             if not os.access(f, os.R_OK):
                 errors = True
-                print(c.NO_PERM % ("file", f, "read"))
+                print(c.NO_PERM % ("file", f, "read"), file=sys.stderr)
             if not os.access(f, os.W_OK):
                 errors = True
-                print(c.NO_PERM % ("file", f, "write"))
+                print(c.NO_PERM % ("file", f, "write"), file=sys.stderr)
 
     if errors:
         print_usage(1)

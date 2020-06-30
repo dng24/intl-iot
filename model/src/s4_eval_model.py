@@ -33,6 +33,7 @@ import matplotlib
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
 from multiprocessing import Pool
+import Constants as c
 
 """
 Output: root_model/{alg}/*.models
@@ -54,41 +55,10 @@ num_pools = 12
 default_models = ['knn']
 model_list = []
 
-RED = "\033[31;1m"
-END = "\033[0m"
-PATH = sys.argv[0]
-
-usage_stm = """
-Usage: python3 {prog_name} -i IN_FEATURES_DIR -o OUT_MODELS_DIR [-dknrs]
-
-Trains anaylzed pcap files and produces one or more models using different algorithms
-that can predict device activity.
-
-Example: python3 {prog_name} -i features/us/ -o tagged-models/us/ -kn
-
-Required arguments:
-  -i IN_FEATURES_DIR path to a directory containing CSV files of statistically-analyzed
-                       pcap files
-  -o OUT_MODELS_DIR  path to the directory to put the generated models; this directory
-                       will be created if it does not exist
-
-Optional arguments:
-  -d produce a model using the dbscan algorithm
-  -k produce a model using the kmeans algorithm
-  -n produce a model using the knn algorithm
-  -r produce a model using the rf algorithm
-  -s produce a model using the spectral algorithm
-  -h print this usage statement and exit
-
-Note: If no model is chosen, all of the models will be produced.
-
-For more information, see the README or model_details.md.""".format(prog_name=PATH)
-
-
-#isError is either 0 or 1
+#is_error is either 0 or 1
 def print_usage(is_error):
-    print(usage_stm, file=sys.stderr) if is_error else print(usage_stm)
-    exit(isError)
+    print(c.EVAL_MOD_USAGE, file=sys.stderr) if is_error else print(c.EVAL_MOD_USAGE)
+    exit(is_error)
 
 
 def main():
@@ -96,7 +66,7 @@ def main():
     global root_feature, root_model, root_output, dir_tsne_plots, model_list
 
     # Parse Arguments
-    parser = argparse.ArgumentParser(usage=usage_stm, add_help=False)
+    parser = argparse.ArgumentParser(usage=c.EVAL_MOD_USAGE, add_help=False)
     parser.add_argument("-i", dest="root_feature", default="")
     parser.add_argument("-o", dest="root_model", default="")
     parser.add_argument("-d", dest="dbscan", action="store_true", default=False)
@@ -110,25 +80,40 @@ def main():
     if args.help:
         print_usage(0)
 
-    print("Running %s..." % PATH)
+    print("Running %s..." % c.PATH)
 
     # Error checking command line args
-    done = False
-    if args.root_feature == "":
-        done = True
-        print("%s%s: Error: Features directory (-f) required.%s" % (RED, path, END), file=sys.stderr)
-    elif not os.path.isdir(args.root_feature):
-        done = True
-        print("%s%s: Error: The features directory \"%s\" does not exist.%s" % (RED, path, args.root_features, END), file=sys.stderr)
+    root_feature = args.root_feature
+    root_model = args.root_model
+    errors = False
+    #check -i in features
+    if root_feature == "":
+        errors = True
+        print(c.NO_FEAT_DIR, file=sys.stderr)
+    elif not os.path.isdir(root_feature):
+        errors = True
+        print(c.INVAL % ("Features directory", root_feature, "directory"), file=sys.stderr)
     else:
-        root_feature = args.root_feature
+        if not os.access(root_feature, os.R_OK):
+            errors = True
+            print(c.NO_PERM % ("features directory", root_feature, "read"), file=sys.stderr)
+        if not os.access(root_feature, os.X_OK):
+            errors = True
+            print(c.NO_PERM % ("features directory", root_feature, "execute"), file=sys.stderr)
 
-    if args.root_model == "":
-        done = True
-        print("%s%s: Error: Model directory (-m) required.%s" % (RED, path, END), file=sys.stderr)
-    else:
-        root_model = args.root_model
+    #check -o out models
+    if root_model == "":
+        errors = True
+        print(c.NO_MOD_DIR, file=sys.stderr)
+    elif os.path.isdir(root_model):
+        if not os.access(root_model, W_OK):
+            errors = True
+            print(c.NO_PERM % ("model directory", root_model, "write"), file=sys.stderr)
+        if not os.access(root_model, X_OK):
+            errors = True
+            print(c.NO_PERM % ("model directory", root_model, "execute"), file=sys.stderr)
 
+    #add requested models for generation
     if args.dbscan:
         model_list.append("dbscan")
 
@@ -147,19 +132,19 @@ def main():
     if not model_list:
         model_list = default_models.copy()
 
-    if done:
+    if errors:
         print_usage(1)
+    #end error checking
 
-    print("Input files located in: %s" % root_feature)
-    print("Output files placed in: %s" % root_model)
-
-    root_output = root_model + '/output'
+    print("Input files located in: %s\nOutput files placed in: %s" % (root_feature, root_model))
+    root_output = os.path.join(root_model, 'output')
     if not os.path.exists(root_output):
         os.system('mkdir -pv %s' % root_output)
         for model_alg in model_list:
             model_dir = '%s/%s' % (root_model, model_alg)
             if not os.path.exists(model_dir):
                 os.mkdir(model_dir)
+
     train_models()
 
 

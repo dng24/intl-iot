@@ -1,6 +1,9 @@
 import os
 import sys
 import time
+import copy
+from multiprocessing import Process
+from multiprocessing import Manager
 
 import numpy as np
 import pandas as pd
@@ -8,164 +11,185 @@ from scipy.stats import kurtosis
 from scipy.stats import skew
 from statsmodels import robust
 
-columns_intermediate = ['frame_no', 'ts', 'ts_delta', 'protocols', 'frame_len', 'eth_src',
-                        'eth_dst', 'ip_src', 'ip_dst', 'tcp_srcport', 'tcp_dstport',
-                        'http_host', 'sni', 'udp_srcport', 'udp_dstport']
+import Constants as c
 
-columns_state_features = ["start_time", "end_time", "meanBytes", "minBytes", "maxBytes",
-                            "medAbsDev", "skewLength",
-                          "kurtosisLength", "q10", "q20", "q30", "q40", "q50", "q60",
-                          "q70", "q80", "q90", "spanOfGroup", "meanTBP", "varTBP",
-                          "medianTBP", "kurtosisTBP", "skewTBP", "network_to", "network_from",
-                          "network_both", "network_to_external", "network_local",
-                          "anonymous_source_destination", "device", "state"]
+cols_dec = ['frame_no', 'ts', 'ts_delta', 'protocols', 'frame_len', 'eth_src', 'eth_dst',
+            'ip_src', 'ip_dst', 'tcp_srcport', 'tcp_dstport', 'http_host', 'sni', 'udp_srcport',
+            'udp_dstport']
 
-# import warnings
+cols_feat = ["start_time", "end_time", "meanBytes", "minBytes", "maxBytes", "medAbsDev",
+             "skewLength", "kurtosisLength", "q10", "q20", "q30", "q40", "q50", "q60", "q70",
+             "q80", "q90", "spanOfGroup", "meanTBP", "varTBP", "medianTBP", "kurtosisTBP",
+             "skewTBP", "network_to", "network_from", "network_both", "network_to_external",
+             "network_local", "anonymous_source_destination", "device", "state"]
 
 """
 INPUT: intermediate files
 OUTPUT: features for RFT models, with device and state labels 
 """
 
-root_exp = ''
-root_feature = ''
+random_ratio = 0.8
+num_per_exp = 10
 
-random_ratio=0.8
-num_per_exp=10
-
-RED = "\033[31;1m"
-END = "\033[0m"
-path = sys.argv[0]
-
-usage_stm = """
-Usage: python3 {prog_name} in_imd_dir out_features_dir
-
-Performs statistical analysis on decoded pcap files.
-
-Example: python3 {prog_name} tagged-intermediate/us/ features/us/
-
-Arguments:
-  in_imd_dir:       path to a directory containing text files of decoded pcap data
-  out_features_dir: path to the directory to write the analyzed CSV files;
-                      directory will be generated if it does not already exist
-
-For more information, see the README or model_details.md.""".format(prog_name=path)
-
-
-#isError is either 0 or 1
+#is_error is either 0 or 1
 def print_usage(is_error):
-    print(usage_stm, file=sys.stderr) if is_error else print(usage_stm)
-    exit(isError)
+    print(c.GET_FEAT_USAGE, file=sys.stderr) if is_error else print(c.GET_FEAT_USAGE)
+    exit(is_error)
 
 
 def main():
-    global root_exp, root_feature
+    [ print_usage(0) for arg in sys.argv if arg in ("-h", "--help") ]
 
-    for arg in sys.argv:
-        if arg in ("-h", "--help"):
-            print_usage(0)
-
-    print("Running %s..." % path)
-
-    if len(sys.argv) != 3:
-        print("%s%s: Error: 2 arguments required. %d arguments found.%s"
-              % (RED, path, (len(sys.argv) - 1), END), file=sys.stderr)
+    print("Running %s..." % c.PATH)
+    
+    #error checking
+    #check that there are 2 or 3 args
+    if len(sys.argv) != 3 and len(sys.argv) != 4:
+        print(c.WRONG_NUM_ARGS % (2, (len(sys.argv) - 1)), file=sys.stderr)
         print_usage(1)
 
-    root_exp = sys.argv[1]
-    root_feature = sys.argv[2]
+    in_dir = sys.argv[1]
+    out_dir = sys.argv[2]
+    str_num_proc = sys.argv[3] if len(sys.argv) == 4 else "1"
 
-    if not os.path.isdir(root_exp):
-        print("%s%s: Error: Input directory %s does not exist!%s"
-              % (RED, path, root_exp, END), file=sys.stderr)
+    #check in_dir
+    errors = False
+    if not os.path.isdir(in_dir):
+        errors = True
+        print(c.INVAL % ("Decoded pcap directory", in_dir, "directory"), file=sys.stderr)
+    else:
+        if not os.access(in_dir, os.R_OK):
+            errors = True
+            print(c.NO_PERM % ("Decoded pcap directory", in_dir, "read"), file=sys.stderr)
+        if not os.access(in_dir, os.X_OK):
+            errors = True
+            print(c.NO_PERM % ("Decoded pcap directory", in_dir, "execute"), file=sys.stderr)
+
+    #check out_dir
+    if os.path.isdir(out_dir):
+        if not os.access(out_dir, os.W_OK):
+            errors = True
+            print(c.NO_PERM % ("output directory", out_dir, "write"), file=sys.stderr)
+        if not os.access(out_dir, os.X_OK):
+            errors = True
+            print(c.NO_PERM % ("output directory", out_dir, "execute"), file=sys.stderr)
+
+    #check num_proc
+    bad_proc = False
+    num_proc = 1
+    try:
+        num_proc = int(str_num_proc)
+        if num_proc < 0:
+            errors = bad_proc = True
+    except ValueError:
+        errors = bad_proc = True
+
+    if bad_proc:
+        print(c.NON_POS % ("number of processes", str_num_proc), file=sys.stderr)
+
+    if errors:
         print_usage(1)
+    #end error checking
 
-    print("Input files located in: %s" % root_exp)
-    print("Output files placed in: %s" % root_feature)
-    prepare_features()
-
-
-def prepare_features():
-    global root_exp, root_feature
+    print("Input files located in: %s\nOutput files placed in: %s\n" % (in_dir, out_dir))
+    
     group_size = 50
-    dict_intermediates = dict()
-    dircache = root_feature + '/caches'
+    dict_dec = dict()
+    dircache = os.path.join(out_dir, 'caches')
     if not os.path.exists(dircache):
         os.system('mkdir -pv %s' % dircache)
     #Parse input file names
-    #root_exp/dir_device/dir_exp/intermeidate_file
-    for dir_device in os.listdir(root_exp):
-        training_file = root_feature + '/' + dir_device + '.csv' #Output file
+    #in_dir/dev_dir/act_dir/dec_file
+    for dev_dir in os.listdir(in_dir):
+        training_file = os.path.join(out_dir, dev_dir + '.csv') #Output file
         #Check if output file exists
         if os.path.exists(training_file):
-            print('Features for %s prepared already in %s' % (dir_device, training_file))
+            print('Features for %s prepared already in %s' % (dev_dir, training_file))
             continue
-        full_dir_device = root_exp + '/' + dir_device
-        if not os.path.isdir(full_dir_device):
-            continue
-        for dir_exp in os.listdir(full_dir_device):
-            full_dir_exp = full_dir_device + '/' + dir_exp
-            if not os.path.isdir(full_dir_exp):
-                continue
-            for intermediate_file in os.listdir(full_dir_exp):
-                full_intermediate_file = full_dir_exp + '/' + intermediate_file
-                if intermediate_file[-4:] != ".txt":
-                    print("%s is not a .txt file!" % full_intermediate_file)
+        full_dev_dir = os.path.join(in_dir, dev_dir)
+        for act_dir in os.listdir(full_dev_dir):
+            full_act_dir = os.path.join(full_dev_dir, act_dir)
+            for dec_file in os.listdir(full_act_dir):
+                full_dec_file = os.path.join(full_act_dir, dec_file)
+                if not full_dec_file.endswith(".txt"):
+                    print(c.WRONG_EXT % ("Decoded file", "text (.txt)", full_dec_file), file=sys.stderr)
                     continue
-                if 'companion' in intermediate_file:
-                    state = '%s_companion_%s' % (dir_exp, dir_device)
-                    device = intermediate_file.split('.')[-2] # the word before pcap
+                if not os.path.isfile(full_dec_file):
+                    print(c.INVAL % ("Decoded file", full_dec_file, "file"), file=sys.stderr)
+                    continue
+                if not os.access(full_dec_file, os.R_OK):
+                    print(c.NO_PERM % ("decoded file", full_dec_file, "read"), file=sys.stderr)
+                    continue
+
+                if 'companion' in dec_file:
+                    state = '%s_companion_%s' % (act_dir, dev_dir)
+                    device = dec_file.split('.')[-2] # the word before pcap
                 else:
-                    state = dir_exp
-                    device = dir_device
-                feature_file = (root_feature + '/caches/' + device + '_' + state
-                                + '_' + intermediate_file[:-4] + '.csv') #Output cache files
-                paras = (full_intermediate_file, feature_file, group_size, device, state)
+                    state = act_dir
+                    device = dev_dir
+                feature_file = os.path.join(out_dir, 'caches', device + '_' + state
+                               + '_' + dec_file[:-4] + '.csv') #Output cache files
+                #the file, along with some data about it
+                paras = (full_dec_file, feature_file, group_size, device, state)
                 #Dict contains devices that do not have an output file
-                if device not in dict_intermediates:
-                    dict_intermediates[device] = []
-                dict_intermediates[device].append(paras)
+                if device not in dict_dec:
+                    dict_dec[device] = []
+                dict_dec[device].append(paras)
 
-    devices = "Feature files to be generated from following devices: "
-    if len(dict_intermediates) == 0:
-        devices = devices + "None"
-    else:
-        for key, value in dict_intermediates.items():
-            devices = devices + key + ", "
-        devices = devices[:-2]
-    print(devices)
+    devices = "None" if len(dict_dec) == 0 else ", ".join(dict_dec.keys())
+    print("Feature files to be generated from the following devices:", devices)
 
-    for device in dict_intermediates:
-        training_file = root_feature + '/' + device + '.csv'
-        list_data = []
-        list_paras = dict_intermediates[device]
-        for paras in list_paras:
-            full_intermediate_file = paras[0]
-            feature_file = paras[1]
-            device = paras[3]
-            state = paras[4]
-            tmp_data = load_features_per_exp(
-                    full_intermediate_file, feature_file, device, state)
-            if tmp_data is None or len(tmp_data) == 0:
-                continue
-            list_data.append(tmp_data)
-        if len(list_data) > 0:
-            pd_device = pd.concat(list_data, ignore_index=True) #Concat all cache files together
-            print('Saved to %s' % training_file)
+    for device in dict_dec:
+        training_file = os.path.join(out_dir, device + '.csv')
+        list_paras = dict_dec[device]
+
+        #create groups to run with processes
+        params_arr = [ [] for _ in range(num_proc) ]
+
+        #create results array
+        results = Manager().list()
+
+        #split pcaps into num_proc groups
+        for i, paras in enumerate(list_paras):
+            params_arr[i % num_proc].append(paras)
+
+        procs = []
+        for paras_list in params_arr:
+            p = Process(target=run, args=(paras_list, results))
+            procs.append(p)
+            p.start()
+
+        for p in procs:
+            p.join()
+
+        if len(results) > 0:
+            pd_device = pd.concat(results, ignore_index=True) #Concat all cache files together
             pd_device.to_csv(training_file, index=False) #Put in CSV file
-    print('%s: Features prepared!' % time.time())
+            print("\nResults concatenated to %s" % training_file)
 
 
-def load_features_per_exp(intermediate_file, feature_file, device_name, state):
+def run(paras_list, results):
+    for paras in paras_list:
+        full_dec_file = paras[0]
+        feature_file = paras[1]
+        device = paras[3]
+        state = paras[4]
+        tmp_data = load_features_per_exp(full_dec_file, feature_file, device, state)
+        if tmp_data is None or len(tmp_data) == 0:
+            continue
+        results.append(tmp_data)
+
+
+def load_features_per_exp(dec_file, feature_file, device_name, state):
     #Load data from cache
     if os.path.exists(feature_file):
         print('    Load from %s' % feature_file)
         return pd.read_csv(feature_file)
 
     #Attempt to extract data from input files if not in previously-generated cache files
-    feature_data = extract_features(intermediate_file, feature_file, device_name, state)
+    feature_data = extract_features(dec_file, feature_file, device_name, state)
     if feature_data is None or len(feature_data) == 0: #Can't extract from input files
-        print('No data or features from %s' % intermediate_file)
+        print('No data or features from %s' % dec_file)
         return
     else: #Cache was generated; save to file
         feature_data.to_csv(feature_file, index=False)
@@ -173,27 +197,23 @@ def load_features_per_exp(intermediate_file, feature_file, device_name, state):
 
 
 #Create CSV cache file
-def extract_features(intermediate_file, feature_file, device_name, state):
-    if not os.path.exists(intermediate_file):
-        print('%s not exist' % intermediate_file)
-        return
-    col_names = columns_intermediate
-    c= columns_state_features
-    pd_obj_all = pd.read_csv(intermediate_file, names=col_names, sep='\t')
-    pd_obj = pd_obj_all.loc[:, ['ts', 'ts_delta', 'frame_len','ip_src','ip_dst']]
+def extract_features(dec_file, feature_file, device_name, state):
+    col_names = cols_dec
+    col_feat = cols_feat
+    pd_obj_all = pd.read_csv(dec_file, names=col_names, sep='\t')
+    pd_obj = pd_obj_all.loc[:, ['ts', 'ts_delta', 'frame_len', 'ip_src', 'ip_dst']]
     num_total = len(pd_obj_all)
     if pd_obj is None or num_total < 10:
         return
-    print('Extracting from %s' % intermediate_file)
-    print('   %s packets %s' % (num_total, feature_file))
+    print("In decoded: %s\n  Out features: %s" % (dec_file, feature_file))
     feature_data = pd.DataFrame()
     num_pkts = int(num_total * random_ratio)
     for di in range(0, num_per_exp):
         random_indices = list(np.random.choice(num_total, num_pkts))
-        random_indices=sorted(random_indices)
+        random_indices = sorted(random_indices)
         pd_obj = pd_obj_all.loc[random_indices, :]
         d = compute_tbp_features(pd_obj, device_name, state)
-        feature_data = feature_data.append(pd.DataFrame(data=[d], columns=c))
+        feature_data = feature_data.append(pd.DataFrame(data=[d], columns=col_feat))
     return feature_data
 
 
