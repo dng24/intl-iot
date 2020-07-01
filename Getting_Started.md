@@ -12,13 +12,13 @@ A good operating system to use is Linux. Specifically, this guide was written us
 
 1) Clone the Git Repo: `git clone https://github.com/NEU-SNS/intl-iot`
 2) Create a Python 3.6 environment to run the scripts:
-```
+```Bash
 sudo apt-get install virtualenv libpcap-dev libpq-dev python3-dev python3.6-tk gcc tshark
 virtualenv -p python3.6 env
 source env/bin/activate
 ```
 3) Install the following packages:
-```
+```Bash
 pip install numpy scipy pyshark geoip2 matplotlib dpkt pycrypto IPy pcapy scapy Impacket mysql-connector-python-rf pandas tldextract python-whois ipwhois psutil
 ```
 
@@ -56,21 +56,21 @@ For input, very basic usage requires the path to a directory with pcap files (`-
 Optionally, the `-g` option produces a graph(s), and the `-p` option determine the protocols to analyze (more info below). Each graph requires two protocols, which are separated by a period (`.`). The first protocol is the send protocol, and the second protocol is the receive protocol.
 
 Example 1: `python3 analyze.py -i iot-data/us/appletv/ -m 7c:61:66:10:46:18 -g StackPlot -p eth.eth`
-   - Output: A CSV file named `results.csv` is produced in the current directory (`destination/`), and a stack plot is produced in a newly created `figures/` directory. In-depth information about the CSV file can be found in the [Destination README](./destination/README.md).
+ - Output: A CSV file named `results.csv` is produced in the current directory (`destination/`), and a stack plot is produced in a newly created `figures/` directory. In-depth information about the CSV file can be found in the [Destination README](./destination/README.md).
 
 ### Generate More Than One Plot
 
 More than one plot can be created by specifying multiple plot names, separated by commas. A corresponding protocol (`-p`) must be specified (again, comma delimited) for each plot specified in the `-g` option.
 
 Example 2: `python3 analyze.py -i iot-data/us/appletv/ -m 7c:61:66:10:46:18 -g StackPlot,LinePlot -p eth.eth,eth.eth`
-   - Output: A CSV file named `results.csv` is produced in the current directory, and an image in the `figures/` directory is produced containing a stack plot and a line plot.
+ - Output: A CSV file named `results.csv` is produced in the current directory, and an image in the `figures/` directory is produced containing a stack plot and a line plot.
 
 ### Input Device and Device List Instead of a MAC
 
 As an alternative to the MAC address, a device (`-d`) and a device list (`-c`) can be given. The device list is a text file containing the MAC addresses of several devices. Each line is formatted as follows: `[MAC] [Device name]`. An example device list is `aux/devices_uk.txt`.
 
 Example 3: `python3 analyze.py -i iot-data/uk/echodot/ -d echodot -c aux/devices_uk.txt -o out_csv.csv -f out_figs/ -g BarPlot -p eth.eth`
-   - Output: The script uses the Echo Dot MAC address in `aux/devices_uk.txt` to perform analysis. A CSV named `out_csv.csv` is created. A bar plot is produced in the newly created `out_figs/` directory.
+ - Output: The script uses the Echo Dot MAC address in `aux/devices_uk.txt` to perform analysis. A CSV named `out_csv.csv` is created. A bar plot is produced in the newly created `out_figs/` directory.
 
 ## Encryption Analysis
 
@@ -85,7 +85,7 @@ For input, this script requires the path to an input pcap file and paths to wher
 For output, a CSV file containing the results is generated. An intermediate JSON file is also generated. The JSON file is parsed, and the parsed information is written to the CSV file. More information about the contents of the CSV file can be found in the [Encryption README](./encryption/README.md).
 
 Example: `./encryption.sh sample.pcap sample.csv sample.json`
-   - Output: The input pcap file `sample.pcap` is run through TShark to produce `sample.json`. This JSON file is analyzed to produce `sample.csv`.
+ - Output: The input pcap file `sample.pcap` is run through TShark to produce `sample.json`. This JSON file is analyzed to produce `sample.csv`.
 
 ## Content Analysis
 
@@ -102,29 +102,22 @@ If you are using the datasets from this study, you may skip to the next section.
 ```
 {root_experiment_director(y|ies)}/{device_name}/{device_activity}/{pcap_file}.pcap
 ```
-See the `exp_list.txt` section in [model/model_details.md](model/model_details.md#exp_listtxt) for more info.
-
-4) Create a text file containing the paths to each input pcap file, with each path on a new line. You may name the text file whatever you would like.
+See the `traffic/` section in [model/model_details.md](model/model_details.md#traffic) for more info.
 
 ### Run Pipeline
-Very basic usage: `./model.sh -i EXP_LIST -r -p IN_PCAP -v DEV_NAME`
+
+Very basic usage: `python3 main.py -i TAGGED_DIR -u UNTAGGED_DIR`
 
 Meanings of the options in very basic usage:
 
-`-i EXP_LIST` - The path to text file containing filepaths to the pcap files to be used to generate machine learning models. To see the format of this text file, please see the `exp_list.txt` section of [model/model_details.md](model/model_details#exp_listtxt) for more information).
+`-i TAGGED_DIR` - The path to the directory containing pcap files with known device activity to generate the machine learning models. See the `traffic/` section of [model/model_details.md](model/model_details.md#traffic) for the required structure of this directory.
 
-`-r` - Generate a model using the random forest (RF) algorithm.
+`-u UNTAGGED_DIR` - The path to the directory containing pcap files with unknown device activity for prediction. See the `traffic/` section of [model/model_details.md](model/model_details.md#traffic) for the required structure of this directory.
 
-`-p IN_PATH` - The path to the pcap file with unknown device activity.
+For output, a directory with several intermediate directories and the activity predictions are produced. By default, the output directory is named `results/`, but it can be changed by using the `-o` option. For more information about the contents of the output directory, see the output section in [model/README.md](model/README.md#output).
 
-`-d DEV_NAME` - The name of the device that generated the data in `IN_PATH`. This argument should match the name of a `device_name` directory (see the `exp_list.txt` section in [model/model_details.md](model/model_details.md#exp_listtxt) for more information).
+Example: `python3 main.py -i traffic/us/ -u sample-untagged/`
+  - Output: A directory named `results/` is produced, containing several intermediate directories and files. The final predictions are located in `results/s10-results/yi-camera_results/model_results.csv`. For an explanation of the contents of this file, see the `s10_predict.py` section of [model/model_details.md](model/model_details.md#output-7).
 
-Note: If you are using the provided dataset, you can run the script just by using `./model.sh`, as all the defaults arguments were set to work with the provided dataset.
-
-For output, a CSV file named is produced, which contains the device activity prediction. For more information about the contents of the CSV file, see the output section in [model/README.md](model/README.md#output). Several other intermediate directories are generated. To learn more about these directories, see [model/README.md](model/README.md).
-
-Example: `./model.sh -i exp_list.txt -r -d yi-camera -p yi_camera_sample.pcap`
-   - Output: TShark decodes the pcap files listed in `exp_list.txt`, which is written to the `tagged-intermediate/us/` directory. Features are then extracted to the `features/us/` directory. Using the features, a machine learning model using the random forest algorithm is created in the `tagged-models/us/`. The pcap file `yi_camera_sample.pcap` is then sent into the `rf` model and results are produced to `results.csv`.
-
-For more information about the files and directories in this section, see [model/model_details.md](model/model_details.md). For step by step instructions on how this pipeline works, see [model/model_sample.ipynb](model/model_sample.ipynb).
+For more information about the files and directories in this section, see [model/model_details.md](model/model_details.md).
 

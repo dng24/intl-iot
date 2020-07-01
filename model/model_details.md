@@ -51,6 +51,25 @@ N samples of M features of L classes
     > This metric is independent of the absolute values of the labels: a permutation of the class or cluster label values won’t change the score value in any way.
 -  _silhouette: [silhouetee_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.silhouette_score.html#sklearn.metrics.silhouette_score)
 
+## Steps
+
+The table below lists the steps needed to complete the model pipeline.
+
+| Step | Phase         | Script               | Description                                      | Inputs                                   | Outputs                               |
+| ---- | ------------- | -------------------- | ------------------------------------------------ | ---------------------------------------- | ------------------------------------- |
+| 1    | Preprocessing | s1_split_data.py     | Make training and testing sets from tagged pcaps | Tagged pcap directory                    | Training and testing pcaps text files |
+| 2.1  | Preprocessing | s2_7_decode_raw.py   | Decode tagged training pcaps                     | Training pcaps text file                 | Decoded training pcaps directory      |
+| 2.2  | Preprocessing | s2_7_decode_raw.py   | Decode tagged testing pcaps                      | Testing pcaps text file                  | Decoded testing pcaps directory       |
+| 3.1  | Preprocessing | s3_9_get_features.py | Statistically analyze decoded training pcaps     | Decoded training pcaps directory         | Training features directory           |
+| 3.2  | Preprocessing | s3_9_get_features.py | Statistically analyze decoded testing pcaps      | Decoded testing pcaps directory          | Testing features directory            |
+| 4    | Modeling      | s4_eval_model.py     | Generate base model                              | Training features directory              | Models directory - base model         |
+| 5    | Modeling      | s5_find_anomalies.py | Generate anomaly model                           | Training features directory              | Models directory - anomaly model      |
+| 6    | Prediction    | `find` command       | Make text file from untagged pcaps               | Untagged pcap directory                  | Untagged pcaps text file              |
+| 7    | Prediction    | s2_7_decode_raw.py   | Decode untagged pcaps                            | Untagged pcaps text file                 | Decoded untagged pcaps directory      |
+| 8    | Prediction    | s8_slide_split.py    | Split decoded untagged pcaps by timestamp        | Decoded untagged pcaps directory         | Split decoded pcaps directory         |
+| 9    | Prediction    | s3_9_get_features.py | Statistically analyze split decoded pcaps        | Split decoded pcaps directory            | Untagged features directory           |
+| 10   | Prediction    | s10_predict.py       | Predict activity using base and anomaly models   | Untagged features and models directories | Results directory                     |
+
 ## Scripts
 
 ### main.py
@@ -103,6 +122,8 @@ This script places all output in `OUT_DIR`:
 - `s8-untagged-decoded-split/` - The directory containing the decoded untagged pcap files split into different files by timestamp.
 - `s9-untagged-features/` - The directory containing the statistically-analyzed untagged files.
 - `s10-results/` - The directory containing the device activity prediction results of the untagged files.
+
+Steps 6-10 are run only if `-u` is specified.
 
 Information about the contents of each of these files and directories can be found below.
 
