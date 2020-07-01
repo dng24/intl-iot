@@ -69,6 +69,8 @@ def run(pid, files, src, dest, slide_int, time_window):
                     dest_file = os.path.join(dest, fpath.replace(src, "", 1)[:-4]
                                                    + "_part_%d.txt" % num)
                     print("P%s: OUT: %s" % (pid, dest_file))
+                    if not os.path.isdir(os.path.dirname(dest_file)):
+                        os.system("mkdir -pv %s" % os.path.dirname(dest_file))
                     os.system("sed -n \"%d,%dp\" %s > %s" % (i + 1, idx, fpath, dest_file))
                     num_pop += 1
                     num += 1
