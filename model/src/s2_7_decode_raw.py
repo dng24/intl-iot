@@ -19,9 +19,9 @@ def extract_pcap(in_pcap, out_txt):
 
     #check if TShark worked
     if os.path.exists(out_txt) and os.path.getsize(out_txt) > 0:
-        print("Input: %s\n  Output: %s" % (in_pcap, out_txt))
+        print("In pcap: %s\n  Out decoded: %s" % (in_pcap, out_txt))
     elif os.path.exists(out_txt):
-        print("Input: %s\n  %s is empty, removing..." % (in_pcap, out_txt))
+        print("In pcap: %s\n  %s is empty, removing..." % (in_pcap, out_txt))
         os.remove(out_txt)
 
 

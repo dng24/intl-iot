@@ -60,10 +60,10 @@ def main():
     else:
         if not os.access(in_dir, os.R_OK):
             errors = True
-            print(c.NO_PERM % ("Decoded pcap directory", in_dir, "read"), file=sys.stderr)
+            print(c.NO_PERM % ("decoded pcap directory", in_dir, "read"), file=sys.stderr)
         if not os.access(in_dir, os.X_OK):
             errors = True
-            print(c.NO_PERM % ("Decoded pcap directory", in_dir, "execute"), file=sys.stderr)
+            print(c.NO_PERM % ("decoded pcap directory", in_dir, "execute"), file=sys.stderr)
 
     #check out_dir
     if os.path.isdir(out_dir):

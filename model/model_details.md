@@ -53,25 +53,21 @@ N samples of M features of L classes
 
 ## Scripts
 
-### model.sh
-
-#### Usage
-
-Usage: `./model.sh [OPTION]...`
-
-Example: `./model.sh -i exp_list.txt -rn -v yi-camera -l knn -p yi_camera_sample.pcap -o sample.csv`
+### main.py
 
 This is the main script of the content analysis pipeline. The scripts listed below are parts of this pipeline. The main goal of this pipeline is to use machine learning to predict the device activity given the network traffic of that device. First, the pipeline needs to create a model using machine learning. The raw network traffic (provided in several pcap files with known device activity) is decoded into human-readable raw data. This raw data is then statistically analyzed and sent into an algorithm for training. Once trained, one or more models will be generated for each device. A pcap file with unknown device activity can be put through the same process of decoding it into human-readable data and statistically analyzing it. The analyzed data can then be used to predict the device activity based on the network traffic.
 
+#### Usage
+
+Usage: `python3 main.py -i TAGGED_DIR [OPTION]...`
+
+Example: `python3 main.py -i traffic/us/ -u sample-untagged/ -n -o output/ -p 4`
+
 #### Input
 
-`-i EXP_LIST` - The path to text file containing filepaths to the pcap files to be used to generate machine learning models. To see the format of this text file, please see the [traffic/](#traffic) section below). Default is `exp_list.txt`.
+`-i TAGGED_DIR` - The path to the directory containing pcap files with known device activity to generate the machine learning models. See the [traffic/](#traffic) section below for the required structure of this directory. This option is required.
 
-`-t IMD_DIR` - The path to the directory where the script will create and put decoded pcap files. Default is `tagged-intermediate/us/`.
-
-`-f FEAT_DIR` - The path to the directory where the script will create and put statistically-analyzed files. Default is `features/us/`.
-
-`-m MODELS_DIR` - The path to the directory where the script will create and put generated models. Default is `tagged-models/us/`.
+`-u UNTAGGED_DIR` - The path to the directory containing pcap files with unknown device activity for prediction. See the [traffic/](#traffic) section below for the required structure of this directory.
 
 `-d` - Generate a model using the DBSCAN algorithm.
 
@@ -83,30 +79,32 @@ This is the main script of the content analysis pipeline. The scripts listed bel
 
 `-s` - Generate a model using the spectral clustering algorithm.
 
-`-p IN_PATH` - The path to the pcap file with unknown device activity. Default is `yi_camera_sample.pcap`.
+`-o OUT_DIR` - The path to a directory to place all intermediate and final prediction output. This directory will be generated if it currently does not exist.
 
-`-v DEV_NAME` - The name of the device that generated the data in `IN_PCAP`. This argument should match the name of a `device_name` directory (see the [traffic/](#traffic) section below). Default is `yi-camera`.
-
-`-l MODEL_NAME` - The name of the model to be used to predict the device activity of `IN_PCAP`.
-Choose from `kmeans`, `knn`, or `rf`. The DBSCAN and spectral clustering algorithms cannot be us
-ed for prediction. The model must also have been generated to be used. Default is `rf`.
-
-`-o OUT_CSV` - The path to a CSV file to write the results of predicting the device activity of `IN_PATH`. Default is `sample.csv`.
+`-p NUM_PROC` - The number of processes to use to run parts of this pipeline. Default is `1`.
 
 `-h` - Display the usage statement and exit.
 
-Notes: All directories and `OUT_CSV` will be generated if they currently do not exist. If no models are specified to be generated, all five models will be created.
+Note: If no models are specified to be generated, all five models will be created.
 
 #### Output
 
-This script produces a CSV file that contains the prediction of the state of the device given the device's network traffic. If the CSV exists, the script will overwrite it. Several intermediate files and directories are also produced, as described above.
+This script places all output in `OUT_DIR`:
 
-- `ts` - The Unix timestamp at which data was first recorded to `IN_PCAP`.
-- `ts_end` - The Unix timestamp at which recording was stopped to `IN_PCAP`.
-- `ts_delta` - The time difference between each frame capture.
-- `num_pkt` - The number of packets in `IN_PCAP`.
-- `state` - The predicted state that the device was in when `IN_PCAP` was created.
-- `device` - The input into the `-v` option.
+- `s1_test_paths.txt` - The paths to pcap files used to test the trained models.
+- `s1_train_paths.txt` - The paths to pcap files used to create the machine learning models.
+- `s2.1-train-decoded/` - The directory containing the decoded training pcap files.
+- `s2.2-test-decoded/` - The directory containing the decoded testing pcap files.
+- `s3.1-train-features/` - The directory containing the statistically-analyzed training files.
+- `s3.2-test-features/` - The directory containing the statistically-analyzed testing files.
+- `s4-5-models/` - The directory containing the base and anomaly machine learning models.
+- `s6_untagged_paths.txt` - The paths to pcap files with unknown device activity.
+- `s7-untagged-decoded/` - The directory containing the decoded untagged pcap files.
+- `s8-untagged-decoded-split/` - The directory containing the decoded untagged pcap files split into different files by timestamp.
+- `s9-untagged-features/` - The directory containing the statistically-analyzed untagged files.
+- `s10-results/` - The directory containing the device activity prediction results of the untagged files.
+
+Information about the contents of each of these files and directories can be found below.
 
 ### src/s1_split_data.py
 
@@ -258,31 +256,37 @@ Example: `python3 slide_split.py -i decoded/us/ -o decoded-split/us/ -t 20 -s 15
 
 The script will recursive take each text file in `IN_DEC_DIR` and split it based on the time window and slide interval. The resulting text files will be placed in `OUT_DIR` where the filename will be appended by `_part_#`, where `#` is the file number in the split.
 
-### predict.py
+### src/s10_predict.py
+
+This script is the tenth step of the model pipeline and the fifth step of the prediction phase. The script takes untagged pcap files and predicts their device activity using the base and anomaly models.
 
 #### Usage
 
-Usage: `python3 predict.py pcap_path model_dir device_name model_name result_path`
+Usage: `python3 s10_predict.py in_features_dir in_models_dir out_results_dir`
 
-Example: `python3 predict.py yi_camera_sample.pcap tagged-models/us/ yi-camera rf results.csv`
-
-The script uses a model to predict the device activity given a pcap file from that device.
+Example: `python3 predict.py features/us/ tagged-models/us/ results/`
 
 #### Input
 
-`pcap_path` - The path to the pcap file with unknown device activity.
+`in_features_dir` - The path to a directory containing CSV files, generated by `s3_9_get_features.py`, of statistically-analyzed untagged pcap files.
 
-`model_dir` - The path to the directory containing the directories of the models.
+`model_dir` - The path to a directory containing machine-learning models to predict device activity, generated by `s4_eval_model.py`.
 
-`device_name` - The name of the device that generated the data in `pcap_path`. This argument should match the name of a `device_name` directory (see the [traffic/](#traffic) section below).
-
-`model_name` - The name of the model to be used to predict the device activity in `pcap_path`. Choose from `kmeans`, `knn`, or `rf`.
-
-`result_path` - The path to a CSV file to write results. If this file does not currently exist, it will be generated.
+`out_result_dir` - The path to a directory to place prediction results. This directory will be generated by the script if it currently does not exist.
 
 #### Output
 
-The script decodes the input pcap file and stores the decoded data in a `user-intermediates/` directory. If a file containing the decoded data already exists, the file will not be regenerated. The script then outputs a CSV file containing the predictions made by the selected model and the decoded data. If the output file already exists, the script will overwrite the file.
+The script takes the features in `in_features_dir/{device}.csv` and uses the models in `model_dir` to predict device activity. A directory named `{device}_results/` is created in `out_result_dir`. In each device result directory, two files are created:
+
+- `anomaly_output.txt` - contains prediction results from the anomaly model
+- `model_results.csv` - contains the prediction results
+
+`model_results.csv` contains four columns:
+
+- `end_time` - the end time of the packets in the specific prediction
+- `prediction` - the activity prediction of the device between `start_time` and `end_time`
+- `start_time` - the start time of the packets in the specific prediction
+- `tagged` - the actual activity of the device in the specified time frame
 
 ## Non-scripts
 

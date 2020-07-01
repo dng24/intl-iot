@@ -106,10 +106,10 @@ def main():
         errors = True
         print(c.NO_MOD_DIR, file=sys.stderr)
     elif os.path.isdir(root_model):
-        if not os.access(root_model, W_OK):
+        if not os.access(root_model, os.W_OK):
             errors = True
             print(c.NO_PERM % ("model directory", root_model, "write"), file=sys.stderr)
-        if not os.access(root_model, X_OK):
+        if not os.access(root_model, os.X_OK):
             errors = True
             print(c.NO_PERM % ("model directory", root_model, "execute"), file=sys.stderr)
 
@@ -263,13 +263,13 @@ def eval_individual_device(train_data_file, dname, specified_models=None):
     """
     ret_results = []
     for model_alg in list_models_todo:
-        model_dir = '%s/%s' % (root_model, model_alg)
+        model_dir = os.path.join(root_model, model_alg)
         if not os.path.exists(model_dir):
             os.system('mkdir -pv %s' % model_dir)
-        model_file = f'{model_dir}/{dname}{model_alg}.model'
-        label_file = '%s/%s.label.txt' % (model_dir, dname)
-        single_outfile = '%s/%s.result.csv' % (model_dir, dname)
-        output_file = '%s/result_%s.txt' % (root_output, model_alg)
+        model_file = os.path.join(model_dir, dname + model_alg + ".model")
+        label_file = os.path.join(model_dir, dname + ".label.txt")
+        single_outfile = os.path.join(model_dir, dname + ".result.csv")
+        output_file = os.path.join(root_output, "result_" + model_alg + ".txt")
         _acc_score = -1
         _noise = -1
         _silhouette = -1

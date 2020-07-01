@@ -21,7 +21,7 @@ SCRIPTS = [SPLIT_DATA, DEC_RAW, GET_FEAT, EVAL_MOD, FIND_ANOM, SLIDE_SPLIT, PRED
 OUT_DIR = "results/"
 for i, arg in enumerate(sys.argv):
     if arg == "-o" and i + 1 < len(sys.argv):
-        OUT_DIR = sys.argv[i]
+        OUT_DIR = sys.argv[i + 1]
         break
 
 TRAIN_PATHS = os.path.join(OUT_DIR, "s1_train_paths.txt")
@@ -55,7 +55,8 @@ WRONG_EXT = BEG + "%s must be a %s file. Received \"%s\"" + END
 NO_TAGGED_DIR = BEG + "Tagged pcap input directory (-i) required." + END
 NON_POS = BEG + "The number of processes must be a positive integer. Received \"%s\"." + END
 SCRIPT_FAIL = BEG + "Something went wrong with \"%s\". Exit status \"%d\".\n"\
-              "    Please make sure you have properly set up your environment." + END
+              "    Please make sure you have properly set up your environment and that all" \
+              " your pcap files are placed in the correct file structure." + END
 
 #eval_model.py errors
 NO_FEAT_DIR = BEG + "Features directory (-i) required." + END
@@ -66,48 +67,44 @@ NO_SRC_DIR = BEG + "Source directory (-i) required." + END
 NO_DEST_DIR = BEG + "Destination directory (-o) required." + END
 INT_GT_TIME_WIN = BEG + "The slide interval (%d) cannot be greater than the time window (%d)." + END 
 
+#predict.py
+MISSING_MOD = BEG + "The %s for %s does not exist at \"%s\". Skipping device..." + END
+
 #main.py usage
 MAIN_USAGE = """
-Usage: {prog_name} [OPTION]...
+Usage: python3 {prog_name} -i TAGGED_DIR [OPTION]...
 
-Predicts the device activity of a pcap file using a machine learning model
+Predicts the device activity of pcap files using machine learning models
 that is created using several input pcap files with known device activity.
 To create the models, the input pcap files are decoded into human-readable
 text files. Statistical analysis is performed on this data, which can then
-be used to generate the machine learning models. There currently are three
+be used to generate the machine learning models. There currently are five
 algorithms available to generate the models.
 
-Example: {prog_name} -i exp_list.txt -rn -v yi-camera -l knn -p yi_camera_sample.pcap -o results.csv
+Example: python3 {prog_name} -i traffic/ -u sample-untagged -n -p 4
 
-Options:
-  -i EXP_LIST   path to text file containing filepaths to the pcap files to be used
-                     to generate machine learning models (Default = exp_list.txt)
-  -t IMD_DIR    path to the directory to place the decoded pcap files
-                     (Default = tagged-intermediate/us/)
-  -f FEAT_DIR   path to the directory to place the statistically-analyzed files
-                     (Default = features/us/)
-  -m MODELS_DIR path to the directory to place the generated models
-                     (Default = tagged-models/us/)
-  -d            generate a model using the DBSCAN algorithm
-  -k            generate a model using the k-means algorithm
-  -n            generate a model using the k-nearest neighbors (KNN) algorithm
-  -r            generate a model using the random forest (RF) algorithm
-  -s            generate a model using the spectral clustering algorithm
-  -p IN_PCAP    path to the pcap file with unknown device activity
-                     (Default = yi_camera_sample.pcap)
-  -v DEV_NAME   name of the device that generated the data in IN_PATH
-                     (Default = yi-camera)
-  -l MODEL_NAME name of the model to be used to predict the device activity in
-                     IN_PATH; choose from kmeans, knn, or rf; DBSCAN and spectral
-                     clustering algorithms cannot be used for prediction; specified
-                     model must exist to be used for prediction (Default = rf)
-  -o OUT_CSV    path to a CSV file to write the results of predicting the
-                     device activity of IN_PATH (Default = results.csv)
-  -h            display this usage statement and exit
+Required arguments:
+  -i TAGGED_DIR   path to the directory containing pcap files with known device
+                    activity to generate the models; see the traffic/ section
+                    of model_details.md for the structure of this directory
 
-Notes:
- - All directories and out_CSV will be generated if they currently do not exist.
- - If no model is specified to be generated, all five models will be generated.
+Optional arguments:
+  -u UNTAGGED_DIR path to the directory containing pcap files with unknown
+                    device activity for prediction; see the traffic/ section
+                    of model_details.md for the structure of this directory
+  -d              generate a model using the DBSCAN algorithm
+  -k              generate a model using the k-means algorithm
+  -n              generate a model using the k-nearest neighbors (KNN) algorithm
+  -r              generate a model using the random forest (RF) algorithm
+  -s              generate a model using the spectral clustering algorithm
+  -o OUT_DIR      path to an output directory to place all intermediate and
+                    final prediction output; directory will be generated if it
+                    currently does not exist (Default = results/)
+  -p NUM_PROC     number of processes to use to run parts of this pipeline
+                    (Default = 1)
+  -h              display this usage statement and exit
+
+Note: If no model is specified to be generated, all five models will be generated.
 
 For more information, see the README and model_details.md.""".format(prog_name=PATH)
 
@@ -156,9 +153,9 @@ Example: python3 {prog_name} decoded/us/ features/us/ 4
 Arguments:
   in_dec_dir:   path to a directory containing text files of decoded pcap data
   out_feat_dir: path to the directory to write the analyzed CSV files;
-                      directory will be generated if it does not already exist
+                  directory will be generated if it does not already exist
   num_proc:     number of processes to use to generate feature files
-                      (Default = 1)
+                  (Default = 1)
 
 For more information, see the README or model_details.md.""".format(prog_name=PATH)
 
@@ -231,3 +228,22 @@ Note: TIME_WIN must be greater or equal to SLIDE_INT. To have each packet appear
   once, TIME_WIN should be equal to SLIDE_INT.
 
 For more information, see the README or model_details.md.""".format(prog_name=PATH)
+
+#predict.py
+PREDICT_USAGE = """
+Usage: python3 {prog_name} in_features_dir in_models_dir out_results_dir
+
+Uses machine learning models to predict device activity of unknown traffic.
+
+Example: python3 {prog_name} features/us/ models/us/ results/
+
+Arguments:
+  in_features_dir: path to a directory containing CSV files of statistically-analyzed
+                     untagged pcap files
+  in_models_dir:   path to a directory containing machine-learning models to predict
+                     device activity
+  out_results_dir: path to the directory to place prediction results; directory will
+                     be generated if it currently does not exist
+
+For more information, see the README or model_details.md.""".format(prog_name=PATH)
+

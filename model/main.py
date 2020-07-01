@@ -185,7 +185,7 @@ def main():
         print_step("\nStep 7: Decoding untagged pcaps into human-readable form...\n$ %s" % cmd)
         run_cmd(cmd, c.DEC_RAW)
 
-        cmd = "python3 %s %s %s" % (c.SLIDE_SPLIT, c.NEW_DEC_DIR, c.NEW_DEC_SPLIT_DIR)
+        cmd = "python3 %s -i %s -o %s -p %d" % (c.SLIDE_SPLIT, c.NEW_DEC_DIR, c.NEW_DEC_SPLIT_DIR, num_proc)
         print_step("\nStep 8: Organizing decoded pcaps...\n$ %s" % cmd)
         run_cmd(cmd, c.SLIDE_SPLIT)
 
@@ -195,8 +195,7 @@ def main():
         
         cmd = "python3 %s %s %s %s " % (c.PREDICT, c.NEW_FEAT_DIR, c.MODELS_DIR, c.RESULTS_DIR)
         print_step("\nStep 10: Predicting device activity...\n$ %s" % cmd)
-        print("Step 10 TBD......")
-        #run_cmd(cmd, c.PREDICT)
+        run_cmd(cmd, c.PREDICT)
 
     #Calculate elapsed time
     end_time = time.time()
