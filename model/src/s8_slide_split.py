@@ -2,6 +2,7 @@ import sys
 import os
 import math
 import argparse
+from linecache import getline
 from multiprocessing import Process
 
 import Constants as c
@@ -28,16 +29,20 @@ def get_num(str_num, description):
     return num
 
 
+def write_file(start_idx, end_idx, in_file, out_file):
+    lines = ""
+    for i in range(start_idx, end_idx):
+        lines += getline(in_file, i)
+    with open(out_file, "w") as f:
+        f.write(lines)
+
+
 def run(pid, files, src, dest, slide_int, time_window):
     for fpath in files:
         times = []
         with open(fpath, "r") as f:
-            lines = f.readlines()
-            if len(lines) == 0:
-                print("%s is empty, skipping..." % fpath)
-                break
             times = []
-            for l in lines:
+            for l in f:
                 try:
                     times.append(float(l.split("\t")[1]))
                 except (IndexError, ValueError) as e:
@@ -66,12 +71,12 @@ def run(pid, files, src, dest, slide_int, time_window):
             num_pop = 0
             for i in start_idxes:
                 if t > end_int:
-                    dest_file = os.path.join(dest, fpath.replace(src, "", 1)[:-4]
+                    dest_file = os.path.join(dest, fpath.replace(src + "/", "", 1)[:-4]
                                                    + "_part_%d.txt" % num)
                     print("P%s: OUT: %s" % (pid, dest_file))
                     if not os.path.isdir(os.path.dirname(dest_file)):
                         os.system("mkdir -pv %s" % os.path.dirname(dest_file))
-                    os.system("sed -n \"%d,%dp\" %s > %s" % (i + 1, idx, fpath, dest_file))
+                    write_file(i + 1, idx + 1, fpath, dest_file)
                     num_pop += 1
                     num += 1
                     end_int += slide_int
@@ -80,11 +85,11 @@ def run(pid, files, src, dest, slide_int, time_window):
             idx += 1
 
         while len(start_idxes) > 0:
-            dest_file = os.path.join(dest, fpath.replace(src, "", 1)[:-4] + "_part_%d.txt" % num)
+            dest_file = os.path.join(dest, fpath.replace(src + "/", "", 1)[:-4] + "_part_%d.txt" % num)
             print("P%s: OUT: %s" % (pid, dest_file))
             if not os.path.isdir(os.path.dirname(dest_file)):
                 os.system("mkdir -pv %s" % os.path.dirname(dest_file))
-            os.system("sed -n \"%d,%dp\" %s > %s" % (start_idxes[0] + 1, idx, fpath, dest_file))
+            write_file(start_idxes[0] + 1, idx + 1, fpath, dest_file)
             start_idxes.pop(0)
             num += 1
 
