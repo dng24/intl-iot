@@ -175,20 +175,13 @@ If an output file already exists, TShark will not run with its corresponding inp
 
 Output files contain the following columns:
 
-- First column - The frame number.
-- Second column - The Unix time of when the frame was captured.
-- Third column - The time difference in seconds between the current and previous frame.
-- Fourth column - The protocols in the frame.
-- Fifth column - The number of bytes in the frame.
-- Sixth column - The source Ethernet MAC address.
-- Seventh column - The destination Ethernet MAC address.
-- Eighth column - The source IP address.
-- Ninth column - The destination IP address.
-- Tenth column - The source TCP port.
-- Eleventh column - The destination TCP port.
-- Twelfth column - The host name.
-- Thirteenth column - The source UDP port.
-- Fourteenth column - The destination UDP port.
+- `frame_num` - The frame number.
+- `ts` - The Unix time of when the frame was captured.
+- `ts_delta` - The time difference in seconds between the current and previous frame.
+- `frame_len` - The number of bytes in the frame.
+- `ip_src` - The source IP address.
+- `ip_dst` - The destination IP address.
+- `host` - The hostname of the destination IP address, if one exists.
 
 ### src/3_9_get_features.py
 
@@ -220,6 +213,7 @@ An output CSV has the following columns (all regarding the random eighty percent
 
 - `start_time` - The lowest Unix timestamp.
 - `end_time` - The highest Unix timestamp.
+- `spanOfGroup` - The difference between `start_time` and `end_time` in number of seconds.
 - `meanBytes` - The mean number of bytes in a frame.
 - `minBytes` - The lowest number of bytes in a frame.
 - `maxBytes` - The highest number of bytes in a frame.
@@ -235,7 +229,6 @@ An output CSV has the following columns (all regarding the random eighty percent
 - `q70` - The seventieth percentile of the number of bytes in a frame.
 - `q80` - The eightieth percentile of the number of bytes in a frame.
 - `q90` - The ninetieth percentile of the number of bytes in a frame.
-- `spanOfGroup` - The difference between `start_time` and `end_time` in number of seconds.
 - `meanTBP` - The mean number of seconds of the time differences between consecutive frame.
 - `varTBP` - The variance of the time differences between consecutive frames.
 - `medianTBP` - The median of the time differences between consecutive frames.
@@ -249,6 +242,7 @@ An output CSV has the following columns (all regarding the random eighty percent
 - `anonymous_source_destination` - The number of frames which do not fit into `network_to`, `network_from`, `network_both`, `network_to_external`, or `network_local`.
 - `device` - The device which the data was recorded on.
 - `state` - The activity of the device when the data was recorded.
+- `host` - A semicolon-delimited list of hostnames of the destination IP addresses in the random sample. If a packet's destination IP address does not have a hostname, the destination IP address is used instead.
 
 ### src/s4_eval_model.py
 

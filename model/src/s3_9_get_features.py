@@ -13,15 +13,11 @@ from statsmodels import robust
 
 import Constants as c
 
-cols_dec = ['frame_no', 'ts', 'ts_delta', 'protocols', 'frame_len', 'eth_src', 'eth_dst',
-            'ip_src', 'ip_dst', 'tcp_srcport', 'tcp_dstport', 'http_host', 'sni', 'udp_srcport',
-            'udp_dstport']
-
 cols_feat = ["start_time", "end_time", "meanBytes", "minBytes", "maxBytes", "medAbsDev",
              "skewLength", "kurtosisLength", "q10", "q20", "q30", "q40", "q50", "q60", "q70",
              "q80", "q90", "spanOfGroup", "meanTBP", "varTBP", "medianTBP", "kurtosisTBP",
              "skewTBP", "network_to", "network_from", "network_both", "network_to_external",
-             "network_local", "anonymous_source_destination", "device", "state"]
+             "network_local", "anonymous_source_destination", "device", "state", "hosts"]
 
 """
 INPUT: intermediate files
@@ -165,7 +161,7 @@ def main():
         if len(results) > 0:
             pd_device = pd.concat(results, ignore_index=True) #Concat all cache files together
             pd_device.to_csv(training_file, index=False) #Put in CSV file
-            print("\nResults concatenated to %s" % training_file)
+            print("Results concatenated to %s" % training_file)
 
 
 def run(paras_list, results):
@@ -198,10 +194,9 @@ def load_features_per_exp(dec_file, feature_file, device_name, state):
 
 #Create CSV cache file
 def extract_features(dec_file, feature_file, device_name, state):
-    col_names = cols_dec
     col_feat = cols_feat
-    pd_obj_all = pd.read_csv(dec_file, names=col_names, sep='\t')
-    pd_obj = pd_obj_all.loc[:, ['ts', 'ts_delta', 'frame_len', 'ip_src', 'ip_dst']]
+    pd_obj_all = pd.read_csv(dec_file, sep="\t")
+    pd_obj = pd_obj_all.loc[:, :]
     num_total = len(pd_obj_all)
     if pd_obj is None or num_total < 10:
         return
@@ -219,8 +214,9 @@ def extract_features(dec_file, feature_file, device_name, state):
 
 #Use Pandas to perform stat analysis on raw data
 def compute_tbp_features(pd_obj, device_name, state):
-    startTime = pd_obj.ts.iloc[0]
-    endTime = pd_obj.ts.iloc[pd_obj.shape[0] - 1]
+    start_time = pd_obj.ts.min()
+    end_time = pd_obj.ts.max()
+    group_len = end_time - start_time
     meanBytes = pd_obj.frame_len.mean()
     minBytes = pd_obj.frame_len.min()
     maxBytes = pd_obj.frame_len.max()
@@ -229,7 +225,6 @@ def compute_tbp_features(pd_obj, device_name, state):
     kurtL = kurtosis(pd_obj.frame_len)
     p = [10, 20, 30, 40, 50, 60, 70, 80, 90]
     percentiles = np.percentile(pd_obj.frame_len, p)
-    spanG = pd_obj.ts.max() - pd_obj.ts.min()
     kurtT = kurtosis(pd_obj.ts_delta)
     skewT = skew(pd_obj.ts_delta)
     meanTBP = pd_obj.ts_delta.mean()
@@ -256,14 +251,14 @@ def compute_tbp_features(pd_obj, device_name, state):
         else:
             anonymous_source_destination += 1
 
-    d = [startTime, endTime, meanBytes, minBytes, maxBytes,
-         medAbsDev, skewL, kurtL, percentiles[0],
-         percentiles[1], percentiles[2], percentiles[3],
-         percentiles[4], percentiles[5], percentiles[6],
-         percentiles[7], percentiles[8], spanG, meanTBP, varTBP,
-         medTBP, kurtT, skewT, network_to, network_from,
-         network_both, network_to_external, network_local, anonymous_source_destination,
-         device_name, state]
+    #host is either from the host column, or the destination IP if host doesn't exist
+    hosts = set([ str(pd_obj.ip_dst.iloc[i]) if host == "" else host for i, host in enumerate(pd_obj.host.fillna("")) ])
+    
+    d = [start_time, end_time, group_len, meanBytes, minBytes, maxBytes, medAbsDev, skewL, kurtL,
+         percentiles[0], percentiles[1], percentiles[2], percentiles[3], percentiles[4],
+         percentiles[5], percentiles[6], percentiles[7], percentiles[8], meanTBP, varTBP, medTBP,
+         kurtT, skewT, network_to, network_from, network_both, network_to_external, network_local,
+         anonymous_source_destination, device_name, state, ";".join(hosts)]
     return d
 
 

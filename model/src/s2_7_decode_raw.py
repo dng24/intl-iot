@@ -11,11 +11,38 @@ def print_usage(is_error):
 
 
 def extract_pcap(in_pcap, out_txt):
-    #decode pcap file
-    os.system("tshark -r %s -Y ip -Tfields -e frame.number -e frame.time_epoch"
-              " -e frame.time_delta -e frame.protocols -e frame.len -e eth.src -e eth.dst"
-              " -e ip.src -e ip.dst -e tcp.srcport -e tcp.dstport -e http.host -e udp.srcport"
-              " -e udp.dstport -E separator=/t > %s 2>/dev/null" % (in_pcap, out_txt))
+    #Note: PcapReader from scapy and pyshark seems to be slower than using tshark
+
+    #file contains hosts and ips in format [hostname]\t[ip,ip2,ip3...]
+    hosts = str(os.popen("tshark -r %s -Y \"dns&&dns.a\" -T fields -e dns.qry.name -e dns.a"
+                           % in_pcap).read()).splitlines()
+    ip_host = {} #dictionary of destination IP to hostname
+    for line in hosts: #load ip_host
+        #line[0] is host, line[1] contains IPs that resolve to host
+        line = line.split("\t")
+        ips = line[1].split(",")
+        for ip in ips:
+            ip_host[ip] = line[0]
+
+    #csv output - host will be added to last column
+    out = str(os.popen("tshark -r %s -Y ip -T fields -e frame.number -e frame.time_epoch"
+                       " -e frame.time_delta -e frame.len -e ip.src -e ip.dst 2> /dev/null"
+                       % in_pcap).read()).splitlines()
+    #old command
+    #out = str(os.popen("tshark -r %s -Y ip -T fields -e frame.number -e frame.time_epoch"
+    #                   " -e frame.time_delta -e frame.protocols -e frame.len -e eth.src"
+    #                   " -e eth.dst -e ip.src -e ip.dst -e tcp.srcport -e tcp.dstport"
+    #                   " -e udp.srcport -e udp.dstport -E separator=, 2>/dev/null"
+    #                   % in_pcap).read()).splitlines()
+
+    for i, line in enumerate(out):
+        ip_dst = line.split("\t")[5] #desintation host -> -e ip.dst
+        host = ip_host[ip_dst] if ip_dst in ip_host else ""
+        out[i] += "\t" + host #append host as last column of output
+
+    header = "frame_num\tts\tts_delta\tframe_len\tip_src\tip_dst\thost\n"
+    with open(out_txt, "w") as f:
+        f.write(header + "\n".join(out))
 
     #check if TShark worked
     if os.path.exists(out_txt) and os.path.getsize(out_txt) > 0:
@@ -61,7 +88,7 @@ def main():
     errors = False
     if not in_txt.endswith(".txt"):
         errors = True
-        print(c.WRONG_EXT % ("Input text file", "text (.txt)"), file=sys.stderr)
+        print(c.WRONG_EXT % ("Input text file", "text (.txt)", in_txt), file=sys.stderr)
     elif not os.path.isfile(in_txt):
         errors = True
         print(c.INVAL % ("Input text file", in_txt, "file"), file=sys.stderr)
