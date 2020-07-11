@@ -98,7 +98,7 @@ def main():
         if not os.access(root_output, os.X_OK):
             errors = True
             print(c.NO_PERM % ("output directory", root_output, "execute"), file=sys.stderr)
-
+    print(f'Root output --> {root_output}')
     if errors:
         print_usage(1)
 
@@ -117,29 +117,16 @@ def main():
             ldnames.append(dname)
             lparas.append((train_data_file, dname))
 
-    recall_dict = {}
-    precision_dict = {}
-    f1_dict = {}
-    f2_dict = {}
 
     for i, j in enumerate(lparas):
         # Data Loading
         print(f"Loading Normal data from --> {lparas[i][1]}")
         data = pd.read_csv(lparas[i][0])
-        try:
-            print(f"Loading Anomaly data from --> {lparas[i + 1][1]}")
-            anomaly_data = pd.read_csv(lparas[i + 1][0])
-        except IndexError:
-            print(f"Loading Anomaly data from --> {lparas[0][1]}")
-            anomaly_data = pd.read_csv(lparas[0][0])
-        try:
-            anomaly_data = anomaly_data.sample(round(data.shape[0] * 0.10))
-        except ValueError:
-            anomaly_data = anomaly_data
+        anomaly_data = pd.read_csv('./sample-anomaly/cloudcam.csv')
+        anomaly_data = anomaly_data.sample(round(data.shape[0] * 0.10))
         anomaly_data['state'] = 'anomaly'
-        data_features = data.drop(['device'], axis=1).fillna(-1)
+        data_features = data.drop(['device','hosts'], axis=1).fillna(-1)
 
-        # Data Processing
         anomaly_features = anomaly_data.drop(['device'], axis=1).fillna(-1)
 
         train, normal_test, _, _ = train_test_split(data_features, data_features,
@@ -158,60 +145,41 @@ def main():
         valid['state'] = valid['state'].apply(lambda x: 1 if x == 'anomaly' else 0)
         test['state'] = test['state'].apply(lambda x: 1 if x == 'anomaly' else 0)
 
-
         # Training the model
         mu = train.drop('state', axis=1).mean(axis=0).values
         sigma = train.drop('state', axis=1).cov().values
         model = multivariate_normal(cov=sigma, mean=mu, allow_singular=True)
 
-        print(np.median(model.logpdf(valid[valid['state'] == 0].drop('state', axis=1).values)))
-        print(np.median(model.logpdf(valid[valid['state'] == 1].drop('state', axis=1).values)))
 
         # Validation and Testing
         tresholds = np.linspace(-100, -10, 300)
         scores = []
-        try:
-            for treshold in tresholds:
-                y_hat = (model.logpdf(valid.drop('state', axis=1).values) < treshold).astype(int)
-                scores.append([recall_score(y_pred=y_hat, y_true=valid['state'].values),
-                               precision_score(y_pred=y_hat, y_true=valid['state'].values),
-                               fbeta_score(y_pred=y_hat, y_true=valid['state'].values, beta=2)])
+        for treshold in tresholds:
+            y_hat = (model.logpdf(valid.drop('state', axis=1).values) < treshold).astype(int)
+            scores.append([recall_score(y_pred=y_hat, y_true=valid['state'].values),
+                           precision_score(y_pred=y_hat, y_true=valid['state'].values),
+                           fbeta_score(y_pred=y_hat, y_true=valid['state'].values, beta=2)])
 
-            scores = np.array(scores)
-            print(scores[:, 2].max(), scores[:, 2].argmax())
+        scores = np.array(scores)
+        #print(scores[:, 2].max(), scores[:, 2].argmax())
 
-            plt.plot(tresholds, scores[:, 0], label='$Recall$')
-            plt.plot(tresholds, scores[:, 1], label='$Precision$')
-            plt.plot(tresholds, scores[:, 2], label='$F_2$')
-            plt.ylabel('Score')
-            # plt.xticks(np.logspace(-10, -200, 3))
-            plt.xlabel('Threshold')
-            plt.legend(loc='best')
-            plt.show()
-
-            final_tresh = tresholds[scores[:, 2].argmax()]
-            d = dict({'mvmodel': model, 'treshold': final_tresh})
-            if not os.path.isdir("%s/model" % root_output):
-                os.system("mkdir -pv %s/model" % root_output)
-            f = open(f"{root_output}/multivariate_model_{lparas[i][1]}.pkl", "wb")
-            pickle.dump(d, f)
-            f.close()
-
-        except:
-            if i <= 45:
-                print(f"Error Calculating Outputs for {lparas[i][1]} and {lparas[i + 1][1]}")
-                recall_dict[f'{lparas[i][1]}-{lparas[i + 1][1]}'] = 0
-                precision_dict[f'{lparas[i][1]}-{lparas[i + 1][1]}'] = 0
-                f1_dict[f'{lparas[i][1]}-{lparas[i + 1][1]}'] = 0
-                f2_dict[f'{lparas[i][1]}-{lparas[i + 1][1]}'] = 0
-                continue
-            else:
-                print(f"Error Calculating Outputs for {lparas[i][1]} and {lparas[0][1]}")
-                recall_dict[f'{lparas[i][1]}-{lparas[0][1]}'] = 0
-                precision_dict[f'{lparas[i][1]}-{lparas[i + 1][1]}'] = 0
-                f1_dict[f'{lparas[i][1]}-{lparas[0][1]}'] = 0
-                f2_dict[f'{lparas[i][1]}-{lparas[0][1]}'] = 0
-                continue
+        # plt.plot(tresholds, scores[:, 0], label='$Recall$')
+        # plt.plot(tresholds, scores[:, 1], label='$Precision$')
+        # plt.plot(tresholds, scores[:, 2], label='$F_2$')
+        # plt.ylabel('Score')
+        # # plt.xticks(np.logspace(-10, -200, 3))
+        # plt.xlabel('Threshold')
+        # plt.legend(loc='best')
+        # plt.show()
+        print("Flag")
+        final_tresh = tresholds[scores[:, 2].argmax()]
+        print(f"Final treshold --> {final_tresh}")
+        d = dict({'mvmodel': model, 'treshold': final_tresh})
+        if not os.path.isdir("%s/model" % root_output):
+            os.system("mkdir -pv %s" % root_output)
+        f = open(f"{root_output}/multivariate_model_{lparas[i][1]}.pkl", "wb")
+        pickle.dump(d, f)
+        f.close()
 
 
 if __name__ == "__main__":

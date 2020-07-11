@@ -226,7 +226,7 @@ def eval_individual_device(train_data_file, dname, specified_models=None):
         print('  Not enough data points for %s' % dname)
         return
     print('\t#Total data points: %d ' % num_data_points)
-    X_feature = train_data.drop(['device', 'state'], axis=1).fillna(-1)
+    X_feature = train_data.drop(['device', 'state','hosts'], axis=1).fillna(-1)
     ss= StandardScaler()
     pca = PCA(n_components=20)
     X_std = ss.fit_transform(X_feature)
