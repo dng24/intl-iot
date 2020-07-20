@@ -56,11 +56,13 @@ def main():
     #end error checking
 
     #create output dirs if nonexistent
-    if not os.path.isdir(os.path.dirname(train_path)):
-        os.system("mkdir -pv %s" % os.path.dirname(train_path))
+    train_dirname = os.path.dirname(train_path)
+    if train_dirname != "" and not os.path.isdir(train_dirname):
+        os.system("mkdir -pv %s" % train_dirname)
 
-    if not os.path.isdir(os.path.dirname(test_path)):
-        os.system("mkdir -pv %s" % os.path.dirname(test_path))
+    test_dirname = os.path.dirname(test_path)
+    if test_dirname != "" and not os.path.isdir(test_dirname):
+        os.system("mkdir -pv %s" % test_dirname)
     
     existing_train = []
     existing_test = []
@@ -95,8 +97,8 @@ def main():
             print("  Adding %s to %s" % (f, test_path))
 
     #don't add newline to beginning of first line if starting a new file
-    train_beg = "\n" if os.path.isfile(train_path) else ""
-    test_beg = "\n" if os.path.isfile(test_path) else ""
+    train_beg = "\n" if os.path.isfile(train_path) and len(train_files) > 0 else ""
+    test_beg = "\n" if os.path.isfile(test_path) and len(test_files) > 0 else ""
 
     with open(train_path, "a+") as f:
         f.write(train_beg + "\n".join(train_files))
