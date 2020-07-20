@@ -30,7 +30,7 @@ def get_num(str_num, description):
 
 
 def write_file(start_idx, end_idx, in_file, out_file):
-    lines = ""
+    lines = "frame_num\tts\tts_delta\tframe_len\tip_src\tip_dst\thost\n"
     for i in range(start_idx, end_idx):
         lines += getline(in_file, i)
     with open(out_file, "w") as f:
@@ -46,11 +46,16 @@ def run(pid, files, src, dest, slide_int, time_window):
                 try:
                     times.append(float(l.split("\t")[1]))
                 except (IndexError, ValueError) as e:
-                    break
+                    pass
 
             if len(times) == 0:
-                print("%s does not have valid timestamps, skipping..." % fpath)
-                break
+                print(c.NO_VAL_TS % fpath, file=sys.stderr)
+                continue
+
+        dest_file = os.path.join(dest, fpath.replace(src, "", 1)[:-4] + "_part_0.txt")
+        if os.path.isfile(dest_file):
+            print("P%s: %s exists, skipping %s" % (pid, dest_file, fpath))
+            continue
 
         print("P%s: IN: %s" % (pid, fpath)) 
         start_int = times[0]
@@ -71,12 +76,12 @@ def run(pid, files, src, dest, slide_int, time_window):
             num_pop = 0
             for i in start_idxes:
                 if t > end_int:
-                    dest_file = os.path.join(dest, fpath.replace(src + "/", "", 1)[:-4]
-                                                   + "_part_%d.txt" % num)
+                    dest_file = dest_file[:dest_file.rfind("_")] + "_%d.txt" % num
                     print("P%s: OUT: %s" % (pid, dest_file))
                     if not os.path.isdir(os.path.dirname(dest_file)):
                         os.system("mkdir -pv %s" % os.path.dirname(dest_file))
-                    write_file(i + 1, idx + 1, fpath, dest_file)
+                    #+2: +1 for getline is 1-based index, +1 for skipping header row
+                    write_file(i + 2, idx + 2, fpath, dest_file)
                     num_pop += 1
                     num += 1
                     end_int += slide_int
@@ -85,11 +90,11 @@ def run(pid, files, src, dest, slide_int, time_window):
             idx += 1
 
         while len(start_idxes) > 0:
-            dest_file = os.path.join(dest, fpath.replace(src + "/", "", 1)[:-4] + "_part_%d.txt" % num)
+            dest_file = dest_file[:dest_file.rfind("_")] + "_%d.txt" % num
             print("P%s: OUT: %s" % (pid, dest_file))
             if not os.path.isdir(os.path.dirname(dest_file)):
                 os.system("mkdir -pv %s" % os.path.dirname(dest_file))
-            write_file(start_idxes[0] + 1, idx + 1, fpath, dest_file)
+            write_file(start_idxes[0] + 2, idx + 2, fpath, dest_file)
             start_idxes.pop(0)
             num += 1
 

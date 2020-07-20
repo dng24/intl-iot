@@ -337,7 +337,7 @@ Example: `python3 slide_split.py -i decoded/us/ -o decoded-split/us/ -t 20 -s 15
 
 #### Output
 
-The script will recursive take each text file in `IN_DEC_DIR` and split it based on the time window and slide interval. The resulting text files will be placed in `OUT_DIR` where the filename will be appended by `_part_#`, where `#` is the file number in the split.
+The script will recursive take each text file in `IN_DEC_DIR` and split it based on the time window and slide interval. The resulting text files will be placed in `OUT_DIR` where the filename will be appended by `_part_#`, where `#` is the file number in the split. If an input file's Part 0 exists, then the script will assume all the other parts exist, and the script will move on to the next input file. Delete Part 0 to regenerate.
 
 Each text file is tab-delimited and contains the same columns as those described in the [output](#output-2) section of `src/s2_7_decode_raw.py`.
 

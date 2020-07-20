@@ -66,6 +66,7 @@ NO_MOD_DIR = BEG + "Model directory (-o) required." + END
 NO_SRC_DIR = BEG + "Source directory (-i) required." + END
 NO_DEST_DIR = BEG + "Destination directory (-o) required." + END
 INT_GT_TIME_WIN = BEG + "The slide interval (%d) cannot be greater than the time window (%d)." + END 
+NO_VAL_TS = BEG + "%s does not have valid timestamps, skipping..." + END
 
 #predict.py
 MISSING_MOD = BEG + "The %s for %s does not exist at \"%s\". Skipping device..." + END
