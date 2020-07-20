@@ -134,20 +134,26 @@ def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file)
     ss = action_classification_model_dict['standard_scaler']
     anomaly_model = pickle.load(open(anomaly_model_file, 'rb'))
     normal_data, anomalous_data = filter_anomaly(ss, anomaly_data, anomaly_model, dev_result_dir)
-    print("Normal")
-    print(normal_data.head())
-    print("Abnormal")
-    print(anomalous_data.head())
     # TODO: The normal data is further classified into idle vs the rest. The rest can be passed through an unsup model.
     normal_data['predictions'] = di['normal']
-    anomalous_data = action_classification_model(anomalous_data, action_classification_model_dict)
-    final_data = normal_data.append(anomalous_data).sort_index()
-    y_predict = final_accuracy(final_data, dev_result_dir)
-    arr = list(range(0, len(y_predict)))
-    out_dict = {'start_time': start_time, 'end_time': end_time, 'tagged': final_data['state'], 'prediction': y_predict}
-    out_df = pd.DataFrame(out_dict)
-    out_df['prediction'] = out_df['prediction'].map(reverse_di).fillna("normal")
-    out_df.to_csv(dev_result_dir + '/model_results.csv', index=False)
+    if anomalous_data.shape[0] == 0:
+        final_data = normal_data
+        y_predict = final_accuracy(final_data, dev_result_dir)
+        arr = list(range(0, len(y_predict)))
+        out_dict = {'start_time': start_time, 'end_time': end_time, 'tagged': final_data['state'],
+                    'prediction': y_predict}
+        out_df = pd.DataFrame(out_dict)
+        out_df['prediction'] = out_df['prediction'].map(reverse_di).fillna("normal")
+        out_df.to_csv(dev_result_dir + '/model_results.csv', index=False)
+    else:
+        anomalous_data = action_classification_model(anomalous_data, action_classification_model_dict)
+        final_data = normal_data.append(anomalous_data).sort_index()
+        y_predict = final_accuracy(final_data, dev_result_dir)
+        arr = list(range(0, len(y_predict)))
+        out_dict = {'start_time': start_time, 'end_time': end_time, 'tagged': final_data['state'], 'prediction': y_predict}
+        out_df = pd.DataFrame(out_dict)
+        out_df['prediction'] = out_df['prediction'].map(reverse_di).fillna("normal")
+        out_df.to_csv(dev_result_dir + '/model_results.csv', index=False)
 
 
 def main():
