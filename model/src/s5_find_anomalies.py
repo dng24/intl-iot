@@ -161,16 +161,6 @@ def main():
                            fbeta_score(y_pred=y_hat, y_true=valid['state'].values, beta=2)])
 
         scores = np.array(scores)
-        #print(scores[:, 2].max(), scores[:, 2].argmax())
-
-        # plt.plot(tresholds, scores[:, 0], label='$Recall$')
-        # plt.plot(tresholds, scores[:, 1], label='$Precision$')
-        # plt.plot(tresholds, scores[:, 2], label='$F_2$')
-        # plt.ylabel('Score')
-        # # plt.xticks(np.logspace(-10, -200, 3))
-        # plt.xlabel('Threshold')
-        # plt.legend(loc='best')
-        # plt.show()
         print("Flag")
         final_tresh = tresholds[scores[:, 2].argmax()]
         print(f"Final treshold --> {final_tresh}")

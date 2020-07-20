@@ -35,7 +35,6 @@ def label(label_file):
 
 
 def dictionary_create(labels):
-    # TODO: Do not hardcode dictionary. Labels need to be taken from the device.
     di ={}
     reverse_di = {}
     for i in range(len(labels)):
@@ -78,7 +77,6 @@ def plot_confusion_matrix(cm, classes,
     plt.xticks(rotation=90)
     plt.text(12,0, f" Recall:{recall},\n Precision:{precision},\n F2 Score:{f2},\n F1 Score:{f1}", fontsize=12)
     return plt
-    #plt.show()
 
 
 def load_data(path):
@@ -128,9 +126,10 @@ def final_accuracy(final_data,dev_result_dir):
 
 def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file):
     anomaly_data = load_data(features_file)
+    hosts = anomaly_data['hosts']
     start_time = anomaly_data['start_time']
     end_time = anomaly_data['end_time']
-    anomaly_data = anomaly_data.drop(['device'], axis=1)
+    anomaly_data = anomaly_data.drop(['device','hosts'], axis=1)
     action_classification_model_dict = pickle.load(open(base_model_file, 'rb'))
     ss = action_classification_model_dict['standard_scaler']
     anomaly_model = pickle.load(open(anomaly_model_file, 'rb'))
@@ -139,7 +138,7 @@ def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file)
     print(normal_data.head())
     print("Abnormal")
     print(anomalous_data.head())
-    # TODO: The label for anomalous data will be according to the dictionary count for the device.
+    # TODO: The normal data is further classified into idle vs the rest. The rest can be passed through an unsup model.
     normal_data['predictions'] = di['normal']
     anomalous_data = action_classification_model(anomalous_data, action_classification_model_dict)
     final_data = normal_data.append(anomalous_data).sort_index()
