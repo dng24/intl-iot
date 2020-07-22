@@ -290,7 +290,7 @@ class IPMapping(object):
 
     def extractFromFile(self, pcap_file, host_file=""):
         #run "tshark -r [pcap_file]" - gets the details which contain correct host
-        details = str(os.popen("tshark -r %s" % pcap_file).read())
+        details = str(os.popen("tshark -r %s -Y \"dns&&dns.a\" -T fields -e dns.qry.name -e dns.a" % pcap_file).read())
         if host_file == "" or not os.path.isfile(host_file) or not os.access(host_file, os.R_OK):
             hosts = str(os.popen("tshark -r %s -q -z hosts" % pcap_file).read()).split("\n")
         else:
