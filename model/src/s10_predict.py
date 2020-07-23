@@ -1,16 +1,13 @@
 import pandas as pd
 import numpy as np
-from sklearn.metrics import accuracy_score
 import warnings
-from sklearn.metrics import fbeta_score, precision_score, recall_score, confusion_matrix,f1_score
 import itertools
 import pickle
 from matplotlib import pyplot as plt,style
-from multiprocessing import Pool
 import json
 import os
 import sys
-
+from unsupervised_classification import unsupervised_classification
 import Constants as c
 
 warnings.simplefilter("ignore", category=DeprecationWarning)
@@ -40,7 +37,7 @@ def dictionary_create(labels):
     for i in range(len(labels)):
         di.update({labels[i]:i})
         reverse_di.update({i:labels[i]})
-    
+
     di.update({'normal':len(labels)})
     return di,reverse_di
     
@@ -93,6 +90,10 @@ def filter_anomaly(ss,anomaly_data,multivariate_model_dict,dev_result_dir):
     anomaly_data['anomalous'] = y_predict
     normal_data = anomaly_data[anomaly_data['anomalous'] == 0]
     anomalous_data = anomaly_data[anomaly_data['anomalous'] == 1]
+    normal_data['predictions'] = 'unknown'
+    anomalous_data['predictions'] = 'anomalous'
+    anomalous_data = anomalous_data.drop(['anomalous'],axis=1)
+    normal_data = normal_data.drop(['anomalous'],axis=1)
     output_dict = {'predictions': y_predict}
     if not os.path.isdir(dev_result_dir):
         os.system("mkdir -pv %s" % dev_result_dir)
@@ -103,18 +104,40 @@ def filter_anomaly(ss,anomaly_data,multivariate_model_dict,dev_result_dir):
     return normal_data,anomalous_data
 
 
-def action_classification_model(normal_data,action_class_dict):
+
+def filter_idle(ss,data,multivariate_model_dict,dev_result_dir):
+    mv_model = multivariate_model_dict['mvmodel']
+    treshold = multivariate_model_dict['treshold']
+    y_test = data['state'].apply(lambda x: 1 if x == 'anomaly' else 0)
+    y_predict = (mv_model.logpdf(data.drop(['state','predictions'], axis=1).values) < treshold).astype(int)
+    data['idle'] = y_predict
+    unknown_data = data[data['idle'] == 0]
+    idle_data = data[data['idle'] == 1]
+    unknown_data['predictions'] = 'unknown'
+    idle_data['predictions'] = 'idle'
+    output_dict = {'predictions': y_predict}
+    unknown_data = unknown_data.drop(['idle'],axis=1)
+    idle_data = idle_data.drop(['idle'],axis=1)
+    if not os.path.isdir(dev_result_dir):
+        os.system("mkdir -pv %s" % dev_result_dir)
+
+    with open(dev_result_dir+'/idle_output.txt','w+') as f:
+        f.write(json.dumps(output_dict,cls=NumpyEncoder))
+    return unknown_data,idle_data
+
+
+def action_classification_model(data,action_class_dict):
     ss = action_class_dict['standard_scaler']
     pca = action_class_dict['pca']
     trained_model = action_class_dict['trained_model']
-    transformed_data = ss.transform(normal_data.drop(['state','anomalous'], axis=1))
+    transformed_data = ss.transform(data.drop(['state','predictions'], axis=1))
     transformed_data = pca.transform(transformed_data)
     transformed_data = pd.DataFrame(transformed_data)
     transformed_data = transformed_data.iloc[:, :4]
     y_predict = trained_model.predict(transformed_data)
     y_predicted_1d = np.argmax(y_predict, axis=1)
-    normal_data['predictions'] = y_predicted_1d
-    return normal_data
+    data['predictions'] = y_predicted_1d
+    return data
 
 
 def final_accuracy(final_data,dev_result_dir):
@@ -124,22 +147,35 @@ def final_accuracy(final_data,dev_result_dir):
     return y_predict
 
 
-def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file):
+def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file,idle_model_file):
     anomaly_data = load_data(features_file)
     hosts = anomaly_data['hosts']
     start_time = anomaly_data['start_time']
     end_time = anomaly_data['end_time']
+    device = list(set(anomaly_data.device))[0]
     anomaly_data = anomaly_data.drop(['device','hosts'], axis=1)
     action_classification_model_dict = pickle.load(open(base_model_file, 'rb'))
     ss = action_classification_model_dict['standard_scaler']
     anomaly_model = pickle.load(open(anomaly_model_file, 'rb'))
+    idle_model = pickle.load(open(idle_model_file, 'rb'))
     normal_data, anomalous_data = filter_anomaly(ss, anomaly_data, anomaly_model, dev_result_dir)
     # TODO: The normal data is further classified into idle vs the rest. The rest can be passed through an unsup model.
-    normal_data['predictions'] = di['normal']
+    #normal_data['predictions'] = di['normal']
+    hosts_normal = [hosts[i] for i in normal_data.index]
+    self_labelled_data = normal_data
+    self_labelled_data['predictions'] = unsupervised_classification(normal_data,device,hosts_normal,dev_result_dir)
+    # unknown_data,idle_data = filter_idle(ss, normal_data, idle_model, dev_result_dir)
+    # if idle_data.shape[0] == 0:
+    #     print("No IDLE data")
+    #     self_labelled_data = unknown_data
+    # else:
+    #     self_labelled_data = unknown_data.append(idle_data).sort_index()
+
+
     if anomalous_data.shape[0] == 0:
-        final_data = normal_data
+        print("No Labelled Anomalous data.")
+        final_data = self_labelled_data
         y_predict = final_accuracy(final_data, dev_result_dir)
-        arr = list(range(0, len(y_predict)))
         out_dict = {'start_time': start_time, 'end_time': end_time, 'tagged': final_data['state'],
                     'prediction': y_predict}
         out_df = pd.DataFrame(out_dict)
@@ -147,14 +183,13 @@ def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file)
         out_df.to_csv(dev_result_dir + '/model_results.csv', index=False)
     else:
         anomalous_data = action_classification_model(anomalous_data, action_classification_model_dict)
-        final_data = normal_data.append(anomalous_data).sort_index()
+        anomalous_data['predictions'] = anomalous_data['predictions'].map(reverse_di).fillna("anomaly")
+        final_data = self_labelled_data.append(anomalous_data).sort_index()
         y_predict = final_accuracy(final_data, dev_result_dir)
-        arr = list(range(0, len(y_predict)))
-        out_dict = {'start_time': start_time, 'end_time': end_time, 'tagged': final_data['state'], 'prediction': y_predict}
+        out_dict = {'start_time': start_time, 'end_time': end_time,
+                    'tagged': final_data['state'], 'prediction': y_predict}
         out_df = pd.DataFrame(out_dict)
-        out_df['prediction'] = out_df['prediction'].map(reverse_di).fillna("normal")
         out_df.to_csv(dev_result_dir + '/model_results.csv', index=False)
-
 
 def main():
     global di, reverse_di, labels
@@ -212,9 +247,9 @@ def main():
     #end error checking
 
     for path in os.listdir(features_dir):
-        base_model_name = ''
-        anomaly_model_file = ''
-        device_label = ''
+        # base_model_name = ''
+        # anomaly_model_file = ''
+        # device_label = ''
         if path.endswith(".csv"):
             errors = False
             features_file = features_dir + '/' + path
@@ -231,8 +266,16 @@ def main():
 
             anomaly_model_file = os.path.join(model_dir, "anomaly_model",
                                               "multivariate_model_" + device + ".pkl")
+
+            idle_model_file = os.path.join(model_dir, "idle_model",
+                                              "multivariate_model_" + device + "_idle.pkl")
+
             if not os.path.isfile(anomaly_model_file):
                 print(c.MISSING_MOD % ("anomaly model", device, anomaly_model_file), file=sys.stderr)
+                errors = True
+
+            if not os.path.isfile(idle_model_file):
+                print(c.MISSING_MOD % ("idle model", device, idle_model_file), file=sys.stderr)
                 errors = True
 
             if errors:
@@ -242,7 +285,7 @@ def main():
             di,reverse_di = dictionary_create(labels)
             dev_result_dir = os.path.join(results_dir, device + '_results/')
             print(f"Running process for {device}")
-            run_process(features_file, dev_result_dir,base_model_file,anomaly_model_file )
+            run_process(features_file, dev_result_dir,base_model_file,anomaly_model_file,idle_model_file)
             print("Results for %s written to \"%s\"" % (device, dev_result_dir))
 
 

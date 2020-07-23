@@ -3,3 +3,4 @@ numpy
 statsmodels
 scipy
 scikit-learn==0.20.0
+matplotlib

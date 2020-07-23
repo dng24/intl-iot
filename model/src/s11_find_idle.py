@@ -51,8 +51,8 @@ def main():
 
     print("Running %s..." % c.PATH)
 
-    root_feature = '/Users/abhijit/Desktop/GIT_Projects/intl-iot/model/features-testing1.1/us'
-    root_model='/Users/abhijit/Desktop/GIT_Projects/intl-iot/models_final/features-testing1.1/us'
+    #root_feature = '/Users/abhijit/Desktop/GIT_Projects/intl-iot/model/features-testing1.1/us'
+    #root_model='/Users/abhijit/Desktop/GIT_Projects/intl-iot/models_final/features-testing1.1/us'
 
     #error checking
     #check that there are 2 args
@@ -62,7 +62,7 @@ def main():
 
     root_feature = sys.argv[1]
     root_model = sys.argv[2]
-    root_output = os.path.join(root_model, 'anomaly_model')
+    root_output = os.path.join(root_model, 'idle_model')
 
     #check root_feature
     errors = False
@@ -161,17 +161,14 @@ def main():
                            fbeta_score(y_pred=y_hat, y_true=valid['state'].values, beta=2)])
 
         scores = np.array(scores)
-
         final_tresh = tresholds[scores[:, 2].argmax()]
-        y_hat = (model.logpdf(valid.drop('state', axis=1).values) < final_tresh).astype(int)
-
         cm = confusion_matrix(valid['state'].values, y_hat)
         print(cm)
         print(f"Final treshold --> {final_tresh}")
         d = dict({'mvmodel': model, 'treshold': final_tresh})
         if not os.path.isdir("%s/model" % root_output):
             os.system("mkdir -pv %s" % root_output)
-        f = open(f"{root_output}/multivariate_model_{lparas[i][1]}.pkl", "wb")
+        f = open(f"{root_output}/multivariate_model_{lparas[i][1]}_idle.pkl", "wb")
         pickle.dump(d, f)
         f.close()
 
