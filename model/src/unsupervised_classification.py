@@ -61,26 +61,26 @@ def unsupervised_classification(data,device,hosts,dev_result_dir):
     plt.savefig(f'{dev_result_dir}untagged_results/aic_bic.png')
     plt.clf()
     ############### KMeans Clustering #####################
-    kmeans = KMeans(n_clusters=min_cluster)
-    kmeans_clusters = kmeans.fit_predict(new_data)
-    new_data['kmean_clusters'] = kmeans_clusters
+    kmeans = GaussianMixture(n_clusters=min_cluster)
+    gmm_clusters = GaussianMixture.fit_predict(new_data)
+    new_data['clusters'] = gmm_clusters
     sns_plot = sns.lmplot(x="PC1", y="PC2",
                           data=new_data,
                           fit_reg=False,
-                          hue='kmean_clusters',  # color by cluster
+                          hue='clusters',  # color by cluster
                           legend=True,
                           scatter_kws={"s": 80},
                           height=20)
     ax = plt.gca()
-    ax.set_title("Kmeans")
-    sns_plot.savefig(f"{dev_result_dir}untagged_results/Kmeans_clusters.png")
+    ax.set_title("GMM")
+    sns_plot.savefig(f"{dev_result_dir}untagged_results/GMM_clusters.png")
     # new_data['Device'] = pd.Categorical(pc_filtered.Device)
     # new_data['Actual'] = new_data.Device.cat.codes
     ############### Evaluation #####################
     # labels_true = new_data['Actual']
     # labels_pred = new_data['kmean_clusters']
     # fowlkes_mallows = metrics.fowlkes_mallows_score(labels_pred, labels_true)
-    predictions = ['cluster' + str(i) for i in new_data['kmean_clusters']]
+    predictions = ['cluster' + str(i) for i in new_data['clusters']]
     return predictions
 
 

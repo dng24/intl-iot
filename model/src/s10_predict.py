@@ -164,13 +164,6 @@ def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file,
     hosts_normal = [hosts[i] for i in normal_data.index]
     self_labelled_data = normal_data
     self_labelled_data['predictions'] = unsupervised_classification(normal_data,device,hosts_normal,dev_result_dir)
-    # unknown_data,idle_data = filter_idle(ss, normal_data, idle_model, dev_result_dir)
-    # if idle_data.shape[0] == 0:
-    #     print("No IDLE data")
-    #     self_labelled_data = unknown_data
-    # else:
-    #     self_labelled_data = unknown_data.append(idle_data).sort_index()
-
 
     if anomalous_data.shape[0] == 0:
         print("No Labelled Anomalous data.")
