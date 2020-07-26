@@ -61,7 +61,7 @@ def unsupervised_classification(data,device,hosts,dev_result_dir):
     plt.savefig(f'{dev_result_dir}untagged_results/aic_bic.png')
     plt.clf()
     ############### KMeans Clustering #####################
-    gmm = GaussianMixture(n_clusters=min_cluster)
+    gmm = GaussianMixture(n_components=min_cluster)
     gmm_clusters = gmm.fit_predict(new_data)
     new_data['clusters'] = gmm_clusters
     sns_plot = sns.lmplot(x="PC1", y="PC2",
