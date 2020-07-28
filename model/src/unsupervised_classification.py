@@ -38,6 +38,10 @@ def unsupervised_classification(data,device,hosts,dev_result_dir):
     hosts_column = pc_filtered.set_index('id').hosts.str.split(';', expand=True).stack().reset_index(1,
                                                                                                      drop=True).reset_index(
         name='hosts_split')
+    hosts_column = hosts_column.set_index('id').hosts_split.str.split(',', expand=True).stack().reset_index(1,
+                                                                                                            drop=True).reset_index(
+        name='hosts_split')
+    hosts_column.drop(hosts_column.index[hosts_column['hosts_split'].str.contains('192.168')], inplace=True)
     merged = pd.merge(hosts_column, pc_filtered, on='id', how='left')
     pivoted = merged[['id', 'hosts_split']].pivot_table(index=['id'], columns=['hosts_split'], aggfunc=[len],
                                                         fill_value=0)
