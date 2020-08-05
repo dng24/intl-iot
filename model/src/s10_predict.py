@@ -8,6 +8,7 @@ import json
 import os
 import sys
 from unsupervised_classification import unsupervised_classification
+from retrain import retrain_model
 import Constants as c
 
 warnings.simplefilter("ignore", category=DeprecationWarning)
@@ -147,8 +148,11 @@ def final_accuracy(final_data,dev_result_dir):
     return y_predict
 
 
-def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file,idle_model_file):
+def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file,idle_model_file,model_dir,
+                trained_features_file):
     anomaly_data = load_data(features_file)
+    original_data = anomaly_data
+    #print(original_data.head())
     hosts = anomaly_data['hosts']
     start_time = anomaly_data['start_time']
     end_time = anomaly_data['end_time']
@@ -174,6 +178,8 @@ def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file,
         out_df = pd.DataFrame(out_dict)
         out_df['prediction'] = out_df['prediction'].map(reverse_di).fillna("normal")
         out_df.to_csv(dev_result_dir + '/model_results.csv', index=False)
+        original_data['state'] = y_predict
+        retrain_model(original_data, model_dir,trained_features_file)
     else:
         anomalous_data = action_classification_model(anomalous_data, action_classification_model_dict)
         anomalous_data['predictions'] = anomalous_data['predictions'].map(reverse_di).fillna("anomaly")
@@ -183,6 +189,8 @@ def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file,
                     'tagged': final_data['state'], 'prediction': y_predict}
         out_df = pd.DataFrame(out_dict)
         out_df.to_csv(dev_result_dir + '/model_results.csv', index=False)
+        original_data['state'] = y_predict
+        retrain_model(original_data,model_dir,trained_features_file)
 
 def main():
     global di, reverse_di, labels
@@ -193,13 +201,14 @@ def main():
 
     #error checking
     #check for 3 args
-    if len(sys.argv) != 4:
-        print(c.WRONG_NUM_ARGS % (3, (len(sys.argv) - 1)), file=sys.stderr)
+    if len(sys.argv) != 5:
+        print(c.WRONG_NUM_ARGS % (4, (len(sys.argv) - 1)), file=sys.stderr)
         print_usage(1)
 
     features_dir = sys.argv[1]
     model_dir = sys.argv[2]
     results_dir = sys.argv[3]
+    train_features_dir = sys.argv[4]
     
     #check features dir
     errors = False
@@ -234,6 +243,15 @@ def main():
         if not os.access(results_dir, os.X_OK):
             errors = True
             print(c.NO_PERM % ("results directory", results_dir, "execute"), file=sys.stderr)
+
+    # check results_dir
+    if os.path.isdir(train_features_dir):
+        if not os.access(train_features_dir, os.W_OK):
+            errors = True
+            print(c.NO_PERM % ("Trained Features directory", results_dir, "write"), file=sys.stderr)
+        if not os.access(results_dir, os.X_OK):
+            errors = True
+            print(c.NO_PERM % ("Trained Features directory", results_dir, "execute"), file=sys.stderr)
 
     if errors:
         print_usage(1)
@@ -270,6 +288,10 @@ def main():
             if not os.path.isfile(idle_model_file):
                 print(c.MISSING_MOD % ("idle model", device, idle_model_file), file=sys.stderr)
                 errors = True
+            for feat_path in os.listdir(train_features_dir):
+                if feat_path == f'{device}.csv':
+                    trained_features_file = f'{train_features_dir}/{feat_path}'
+            print(trained_features_file)
 
             if errors:
                 break
@@ -278,7 +300,8 @@ def main():
             di,reverse_di = dictionary_create(labels)
             dev_result_dir = os.path.join(results_dir, device + '_results/')
             print(f"Running process for {device}")
-            run_process(features_file, dev_result_dir,base_model_file,anomaly_model_file,idle_model_file)
+            run_process(features_file, dev_result_dir,base_model_file,anomaly_model_file,idle_model_file,
+                        model_dir,trained_features_file)
             print("Results for %s written to \"%s\"" % (device, dev_result_dir))
 
 

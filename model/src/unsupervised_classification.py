@@ -12,12 +12,29 @@ import seaborn as sns
 from sklearn.mixture import GaussianMixture
 import time
 from sklearn import metrics
+import string
+import random
 
 def unsupervised_classification(data,device,hosts,dev_result_dir):
     if not os.path.exists(f'{dev_result_dir}untagged_results'):
         os.makedirs(f'{dev_result_dir}untagged_results')
     data_collected = data
     num_actions = len(set(data_collected.state))
+    action_labels = set(data_collected.state)
+    flag = True
+    iter_num = 2
+    letters = string.ascii_uppercase
+    while flag:
+        iter_val = ''.join(random.choice(letters) for _ in range(iter_num))
+        for action in action_labels:
+            if iter_val in action:
+                iter_num += 1
+            else:
+                flag = False
+                break
+
+
+
     #hosts = data_collected['hosts']
     data = data_collected.drop(
         ['start_time', 'end_time', 'network_from', 'network_to_external', 'network_local', 'network_both',
@@ -42,6 +59,7 @@ def unsupervised_classification(data,device,hosts,dev_result_dir):
                                                                                                             drop=True).reset_index(
         name='hosts_split')
     hosts_column.drop(hosts_column.index[hosts_column['hosts_split'].str.contains('192.168')], inplace=True)
+
     merged = pd.merge(hosts_column, pc_filtered, on='id', how='left')
     pivoted = merged[['id', 'hosts_split']].pivot_table(index=['id'], columns=['hosts_split'], aggfunc=[len],
                                                         fill_value=0)
@@ -84,7 +102,7 @@ def unsupervised_classification(data,device,hosts,dev_result_dir):
     # labels_true = new_data['Actual']
     # labels_pred = new_data['kmean_clusters']
     # fowlkes_mallows = metrics.fowlkes_mallows_score(labels_pred, labels_true)
-    predictions = ['cluster' + str(i) for i in new_data['clusters']]
+    predictions = [f'{iter_val}_cluster' + str(i) for i in new_data['clusters']]
     return predictions
 
 
