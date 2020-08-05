@@ -254,11 +254,11 @@ For more information, see the README or model_details.md.""".format(prog_name=PA
 
 #predict.py
 PREDICT_USAGE = """
-Usage: python3 {prog_name} in_features_dir in_models_dir out_results_dir
+Usage: python3 {prog_name} in_features_dir in_models_dir out_results_dir out_features_dir(labelled)
 
 Uses machine learning models to predict device activity of unknown traffic.
 
-Example: python3 {prog_name} features/us/ models/us/ results/
+Example: python3 {prog_name} features/us/ models/us/ results/ labelled_features/ 
 
 Arguments:
   in_features_dir: path to a directory containing CSV files of statistically-analyzed
@@ -267,6 +267,8 @@ Arguments:
                      device activity
   out_results_dir: path to the directory to place prediction results; directory will
                      be generated if it currently does not exist
+  out_features_dir(labelled): path to a directory containing CSV files of statistically-analyzed
+                              tagged pcap files
 
 For more information, see the README or model_details.md.""".format(prog_name=PATH)
 
