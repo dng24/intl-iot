@@ -7,11 +7,13 @@ MODEL_DIR = os.path.dirname(PATH)
 if MODEL_DIR == "":
     MODEL_DIR = "."
 SRC_DIR = MODEL_DIR + "/src/"
+IDLE_DATA = SRC_DIR + "s0_idle_data_path.py"
 SPLIT_DATA = SRC_DIR + "s1_split_data.py"
 DEC_RAW = SRC_DIR + "s2_7_decode_raw.py"
 GET_FEAT = SRC_DIR + "s3_9_get_features.py"
 EVAL_MOD = SRC_DIR + "s4_eval_model.py"
 FIND_ANOM = SRC_DIR + "s5_find_anomalies.py"
+FIND_IDLE = SRC_DIR + "s11_find_idle.py"
 SLIDE_SPLIT = SRC_DIR + "s8_slide_split.py"
 PREDICT = SRC_DIR + "s10_predict.py"
 
@@ -26,11 +28,14 @@ for i, arg in enumerate(sys.argv):
 
 TRAIN_PATHS = os.path.join(OUT_DIR, "s1_train_paths.txt")
 TEST_PATHS = os.path.join(OUT_DIR, "s1_test_paths.txt")
+IDLE_PATHS = os.path.join(OUT_DIR, "s1_idle_paths.txt")
 DEC_TRAIN_DIR = os.path.join(OUT_DIR, "s2.1-train-decoded/")
 DEC_TEST_DIR = os.path.join(OUT_DIR, "s2.2-test-decoded/")
+DEC_IDLE_DIR = os.path.join(OUT_DIR, "s2.3-idle-decoded/")
 FEAT_TRAIN_DIR = os.path.join(OUT_DIR, "s3.1-train-features/")
 FEAT_TEST_DIR = os.path.join(OUT_DIR, "s3.2-test-features/")
-MODELS_DIR = os.path.join(OUT_DIR, "s4-5-models/")
+FEAT_IDLE_DIR = os.path.join(OUT_DIR, "s3.3-idle-features/")
+MODELS_DIR = os.path.join(OUT_DIR, "s4-5-6-models/")
 NEW_PATHS = os.path.join(OUT_DIR, "s6_untagged_paths.txt")
 NEW_DEC_DIR = os.path.join(OUT_DIR, "s7-untagged-decoded/")
 NEW_DEC_SPLIT_DIR = os.path.join(OUT_DIR, "s8-untagged-decoded-split/")
@@ -73,7 +78,7 @@ MISSING_MOD = BEG + "The %s for %s does not exist at \"%s\". Skipping device..."
 
 #main.py usage
 MAIN_USAGE = """
-Usage: python3 {prog_name} -i TAGGED_DIR [OPTION]...
+Usage: python3 {prog_name} -i TAGGED_DIR -l IDLE_DIR[OPTION]...
 
 Predicts the device activity of pcap files using machine learning models
 that is created using several input pcap files with known device activity.
@@ -88,6 +93,8 @@ Required arguments:
   -i TAGGED_DIR   path to the directory containing pcap files with known device
                     activity to generate the models; see the traffic/ section
                     of model_details.md for the structure of this directory
+  -l IDLE_DIR     path to the directory containing pcap files with idle device
+                    activity to generate the idle activity detection models.
 
 Optional arguments:
   -u UNTAGGED_DIR path to the directory containing pcap files with unknown
@@ -108,6 +115,21 @@ Optional arguments:
 Note: If no model is specified to be generated, all five models will be generated.
 
 For more information, see the README and model_details.md.""".format(prog_name=PATH)
+
+#split_data.py usage
+IDLE_DAT_USAGE = """
+Usage: python3 {prog_name} in_pcap_dir out_idle_file
+
+Recursively splits the pcaps in a directory into a training set and a testing set.
+
+Example: python3 {prog_name} traffic/ s0_idle_paths.txt
+
+Arguments:
+  in_pcap_dir:    path to a directory containing pcap files
+  out_idle_file: path to a text file to write the filenames of idle files;
+                    file will be generate if it does not already exist
+
+For more information, see the README or model_details.md""".format(prog_name=PATH)
 
 #split_data.py usage
 SPLIT_DAT_USAGE = """
@@ -232,11 +254,11 @@ For more information, see the README or model_details.md.""".format(prog_name=PA
 
 #predict.py
 PREDICT_USAGE = """
-Usage: python3 {prog_name} in_features_dir in_models_dir out_results_dir
+Usage: python3 {prog_name} in_features_dir in_models_dir out_results_dir out_features_dir(labelled)
 
 Uses machine learning models to predict device activity of unknown traffic.
 
-Example: python3 {prog_name} features/us/ models/us/ results/
+Example: python3 {prog_name} features/us/ models/us/ results/ labelled_features/ 
 
 Arguments:
   in_features_dir: path to a directory containing CSV files of statistically-analyzed
@@ -245,6 +267,8 @@ Arguments:
                      device activity
   out_results_dir: path to the directory to place prediction results; directory will
                      be generated if it currently does not exist
+  out_features_dir(labelled): path to a directory containing CSV files of statistically-analyzed
+                              tagged pcap files
 
 For more information, see the README or model_details.md.""".format(prog_name=PATH)
 

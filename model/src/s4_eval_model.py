@@ -422,22 +422,6 @@ def tsne_plot(X, y, figfile, pp=30):
     plt.savefig(figfile, bbox_inches="tight")
 
 
-def test():
-    pc_name = os.uname()[1]
-    """
-    Test in JJ's local laptop
-    """
-    if pc_name == 'Abhijits-MBP-2.fios-router.home':
-        # train_individual_device('/net/data/meddle/moniotr/tagged-features/cloudcam.csv',
-        # '/net/data/meddle/moniotr/tagged-models/cloudcam.model')
-        global root_model, dir_tsne_plots, num_pools, root_output
-        root_model = 'examples'
-        root_output = root_model + '/output'
-        dir_tsne_plots = 'examples/'
-        num_pools = 2
-        eval_individual_device('examples/amcrest-cam-wired.csv', 'amcrest-cam-wired')
-        exit(0)
-
 
 if __name__ == '__main__':
     main()
