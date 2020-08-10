@@ -431,7 +431,6 @@ def perform_analysis(pid, idx, files_len, pcap_file):
         pm = DataPresentation.PlotManager(node_stats.stats.stats, plots)
         pm.ipMap = ip_map
         pm.generatePlot(pid, pcap_file, args.fig_dir, GEO_DB_CITY, GEO_DB_COUNTRY)
-
         Utils.sysUsage("Plots generated")
 
 

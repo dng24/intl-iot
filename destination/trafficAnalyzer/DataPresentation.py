@@ -347,7 +347,7 @@ class DomainExport(DataPresentation):
                 domain_full = self.ipResolver.getDataPoint(ip, "TSharkHost", False)
                 domain = self.ipResolver.extractDomain(domain_full)
                 country = self.ipResolver.getDataPoint(ip, "CountryMapping", True, False)
-                if country is None:
+                if country is None or country == "N/A":
                     country = "XX"
                 org = str(self.ipResolver.getDataPoint(ip, "OrgMapping", True, False))
             else: 

@@ -97,8 +97,8 @@ def main():
     #Parse input file names
     #in_dir/dev_dir/act_dir/dec_file
     for dev_dir in os.listdir(in_dir):
-        if '.DS' in dev_dir:
-            break
+        if dev_dir.startswith("."):
+            continue
         training_file = os.path.join(out_dir, dev_dir + '.csv') #Output file
         #Check if output file exists
         if os.path.exists(training_file):
