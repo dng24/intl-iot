@@ -169,6 +169,7 @@ def train_models():
             lparas.append((train_data_file, dname))
     p = Pool(num_pools)
     t0 = time.time()
+    print(dname)
     list_results = p.map(eid_wrapper, lparas)
     for ret in list_results:
         if ret is None or len(ret) == 0: continue
@@ -228,7 +229,7 @@ def eval_individual_device(train_data_file, dname, specified_models=None):
     print('\t#Total data points: %d ' % num_data_points)
     X_feature = train_data.drop(['device', 'state','hosts'], axis=1).fillna(-1)
     ss= StandardScaler()
-    pca = PCA(n_components=20)
+    pca = PCA(n_components=5)
     X_std = ss.fit_transform(X_feature)
     # Create a PCA instance: pca
     X_std = pca.fit_transform(X_std)
@@ -285,8 +286,14 @@ def eval_individual_device(train_data_file, dname, specified_models=None):
             trained_model.fit(X_train, y_train_bin)
 
             y_predicted = trained_model.predict(X_test)
-            y_predicted_1d = np.argmax(y_predicted, axis=1)
+            try:
+                y_predicted_1d = np.argmax(y_predicted, axis=1)
+            except:
+                y_predicted_1d = y_predicted
+
+
             if len(set(y_predicted_1d)) > 1: _silhouette = silhouette_score(X_test, y_predicted_1d)
+
 
         elif model_alg == 'kmeans':
             print('  kmeans: n_clusters=%s' % num_lables)
@@ -322,7 +329,11 @@ def eval_individual_device(train_data_file, dname, specified_models=None):
             else:
                 y_predicted_1d = np.argmax(y_predicted, axis=1)
 
-        _acc_score = accuracy_score(y_test_bin_1d, y_predicted_1d)
+        try:
+            _acc_score = accuracy_score(y_test_bin_1d, y_predicted_1d)
+        except:
+            print(y_predicted_1d[0])
+            _acc_score = accuracy_score(y_test_bin_1d, y_predicted_1d[0])
         """
         Eval clustering based metrics
         """
