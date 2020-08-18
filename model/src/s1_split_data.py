@@ -4,6 +4,8 @@ import random
 
 import Constants as c
 
+#In: in_pcap_dir out_train_txt [out_test_txt]
+#Out: list of pcap file paths in in_pcap_dir
 
 # is_error is either 0 or 1
 def print_usage(is_error):
@@ -17,14 +19,14 @@ def main():
     print("Running %s..." % c.PATH)
 
     # error checking
-    # check for 3 args
-    if len(sys.argv) != 4:
+    # check for 2 or 3 args
+    if len(sys.argv) != 3 and len(sys.argv) != 4:
         print(c.WRONG_NUM_ARGS % (3, (len(sys.argv) - 1)), file=sys.stderr)
         print_usage(1)
 
     pcap_dir = sys.argv[1]
     train_path = sys.argv[2]
-    test_path = sys.argv[3]
+    test_path = sys.argv[3] if len(sys.argv) == 4 else ""
 
     errors = False
     # check input pcap directory
@@ -41,6 +43,9 @@ def main():
 
     # check output text file
     for f in (train_path, test_path):
+        if f == test_path == "":
+            break
+
         if not f.endswith(".txt"):
             errors = True
             print(c.WRONG_EXT % ("Output file", "text (.txt)", f), file=sys.stderr)
@@ -56,22 +61,15 @@ def main():
         print_usage(1)
     # end error checking
 
-    # create output dirs if nonexistent
-    train_dirname = os.path.dirname(train_path)
-    if train_dirname != "" and not os.path.isdir(train_dirname):
-        os.system("mkdir -pv %s" % train_dirname)
-
-
-
-
     #create output dirs if nonexistent
     train_dirname = os.path.dirname(train_path)
     if train_dirname != "" and not os.path.isdir(train_dirname):
         os.system("mkdir -pv %s" % train_dirname)
 
-    test_dirname = os.path.dirname(test_path)
-    if test_dirname != "" and not os.path.isdir(test_dirname):
-        os.system("mkdir -pv %s" % test_dirname)
+    if test_path != "":
+        test_dirname = os.path.dirname(test_path)
+        if test_dirname != "" and not os.path.isdir(test_dirname):
+            os.system("mkdir -pv %s" % test_dirname)
     
     existing_train = []
     existing_test = []
@@ -82,7 +80,7 @@ def main():
             existing_train = f.read().splitlines()
             [print("  %s exists in %s" % (f, train_path)) for f in existing_train]
 
-    if os.path.isfile(test_path):
+    if test_path != "" and os.path.isfile(test_path):
         with open(test_path, "r") as f:
             existing_test = f.read().splitlines()
             [print("  %s exists in %s" % (f, test_path)) for f in existing_test]
@@ -94,30 +92,34 @@ def main():
         # remove pcaps that are already in the output file
         pcaps = list(set(pcaps) - set(existing_train) - set(existing_test))
 
-        new_test = random.sample(pcaps, round(len(pcaps) / 3))  # test is 1/3 of pcaps
-        new_train = list(set(pcaps) - set(new_test))  # train is 2/3 of pcaps
+        if test_path == "": #everything in 1 file if no out test txt provided
+            new_train = pcaps
+        else: #split files into train and test txts
+            new_test = random.sample(pcaps, round(len(pcaps) / 3))  # test is 1/3 of pcaps
+            new_train = list(set(pcaps) - set(new_test))  # train is 2/3 of pcaps
 
         for f in new_train:
             train_files.append(f)
             print("  Adding %s to %s" % (f, train_path))
 
-        for f in new_test:
-            test_files.append(f)
-            print("  Adding %s to %s" % (f, test_path))
+        if test_path != "":
+            for f in new_test:
+                test_files.append(f)
+                print("  Adding %s to %s" % (f, test_path))
 
 
     # don't add newline to beginning of first line if starting a new file
-
     train_beg = "\n" if os.path.isfile(train_path) and len(train_files) > 0 else ""
-    test_beg = "\n" if os.path.isfile(test_path) and len(test_files) > 0 else ""
 
     with open(train_path, "a+") as f:
         f.write(train_beg + "\n".join(train_files))
         print("Training filenames written to %s" % train_path)
 
-    with open(test_path, "a+") as f:
-        f.write(test_beg + "\n".join(test_files))
-        print("Testing filenames written to %s" % test_path)
+    if test_path != "":
+        test_beg = "\n" if os.path.isfile(test_path) and len(test_files) > 0 else ""
+        with open(test_path, "a+") as f:
+            f.write(test_beg + "\n".join(test_files))
+            print("Testing filenames written to %s" % test_path)
 
 
 if __name__ == '__main__':

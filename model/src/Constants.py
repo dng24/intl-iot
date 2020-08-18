@@ -133,9 +133,12 @@ For more information, see the README or model_details.md""".format(prog_name=PAT
 
 #split_data.py usage
 SPLIT_DAT_USAGE = """
-Usage: python3 {prog_name} in_pcap_dir out_train_file out_test_file
+Usage: python3 {prog_name} in_pcap_dir out_train_file [out_test_file]
 
-Recursively splits the pcaps in a directory into a training set and a testing set.
+Recursively splits the pcaps in a directory into a training set and an optional testing set.
+If a output testing filename is provided, 1/3 of the files will be placed in the testing file,
+while 2/3 of the files will be placed in the training file. If only the training file is
+provided, all pcap filenames will be placed in the training file.
 
 Example: python3 {prog_name} traffic/ s1_train_paths.txt s1_test_paths.txt
 

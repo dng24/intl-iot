@@ -5,6 +5,9 @@ import whois
 
 import Constants as c
 
+#In: in_pcap_txt out_decoded_dir [num_processes]
+#Out: tab-delim txt w/ header: frame_num\tts\tts_delta\tframe_len\tip_src\tip_dst\thost
+
 #is_error is either 0 or 1
 def print_usage(is_error):
     print(c.DEC_RAW_USAGE, file=sys.stderr) if is_error else print(c.DEC_RAW_USAGE)

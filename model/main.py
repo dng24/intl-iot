@@ -212,7 +212,7 @@ def main():
         print_step("\nStep 9: Performing statistical analysis on untagged pcaps...\n$ %s" % cmd)
         run_cmd(cmd, c.GET_FEAT)
         
-        cmd = "python3 %s %s %s %s %s " % (c.PREDICT, c.NEW_FEAT_DIR, c.MODELS_DIR, c.RESULTS_DIR,c.FEAT_TRAIN_DIR)
+        cmd = "python3 %s %s %s %s %s" % (c.PREDICT, c.NEW_FEAT_DIR, c.MODELS_DIR, c.RESULTS_DIR, c.FEAT_TRAIN_DIR)
         print_step("\nStep 10: Predicting device activity...\n$ %s" % cmd)
         run_cmd(cmd, c.PREDICT)
 

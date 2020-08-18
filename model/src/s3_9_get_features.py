@@ -19,10 +19,8 @@ cols_feat = ["start_time", "end_time", "meanBytes", "minBytes", "maxBytes", "med
              "skewTBP", "network_to", "network_from", "network_both", "network_to_external",
              "network_local", "anonymous_source_destination", "device", "state", "hosts"]
 
-"""
-INPUT: intermediate files
-OUTPUT: features for RFT models, with device and state labels 
-"""
+#In: in_decoded_dir out_features_dir [num_processes]
+#Out: CSV w/ header: headings above in cols_feat containing device and state labels
 
 random_ratio = 0.8
 num_per_exp = 10

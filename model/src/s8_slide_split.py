@@ -7,6 +7,9 @@ from multiprocessing import Process
 
 import Constants as c
 
+#In: -i in_decoded_dir -o out_dir [-t time window] [-s slide_interval] [-p num_processes]
+#Out: tab-delim txt w/ header: frame_num\tts\tts_delta\tframe_len\tip_src\tip_dst\thost
+
 #is_error is either 0 or 1
 def print_usage(is_error): 
     print(c.SLIDE_SPLIT_USAGE, file=sys.stderr) if is_error else print(c.SLIDE_SPLIT_USAGE)
