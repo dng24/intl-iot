@@ -1,6 +1,7 @@
 import sys
 import os
 from multiprocessing import Process
+import whois
 
 import Constants as c
 
@@ -16,6 +17,7 @@ def extract_pcap(in_pcap, out_txt):
     #file contains hosts and ips in format [hostname]\t[ip,ip2,ip3...]
     hosts = str(os.popen("tshark -r %s -Y \"dns&&dns.a\" -T fields -e dns.qry.name -e dns.a"
                            % in_pcap).read()).splitlines()
+    #make dictionary of ip to host from DNS requests
     ip_host = {} #dictionary of destination IP to hostname
     for line in hosts: #load ip_host
         #line[0] is host, line[1] contains IPs that resolve to host
@@ -24,22 +26,45 @@ def extract_pcap(in_pcap, out_txt):
         for ip in ips:
             ip_host[ip] = line[0]
 
+    ip_host["8.8.8.8"] = "dns.google" #might remove, whois can't resolve this
+
     #csv output - host will be added to last column
     out = str(os.popen("tshark -r %s -Y ip -T fields -e frame.number -e frame.time_epoch"
                        " -e frame.time_delta -e frame.len -e ip.src -e ip.dst 2> /dev/null"
                        % in_pcap).read()).splitlines()
-    #old command
+    #old command - removed fields that are not used in s3
     #out = str(os.popen("tshark -r %s -Y ip -T fields -e frame.number -e frame.time_epoch"
     #                   " -e frame.time_delta -e frame.protocols -e frame.len -e eth.src"
     #                   " -e eth.dst -e ip.src -e ip.dst -e tcp.srcport -e tcp.dstport"
     #                   " -e udp.srcport -e udp.dstport -E separator=, 2>/dev/null"
     #                   % in_pcap).read()).splitlines()
 
+    #add host to rest of output: 1) get host from tshark 2) get host from whois 3) host is ""
     for i, line in enumerate(out):
         ip_dst = line.split("\t")[5] #desintation host -> -e ip.dst
-        host = ip_host[ip_dst] if ip_dst in ip_host else ""
+        host = ip_host[ip_dst] if ip_dst in ip_host else "N/A"
+        if host == "N/A":
+            ip_spl = ip_dst.split(".")
+            #detect local address
+            if (ip_spl[0] == "10" or (ip_spl[0] == "172" and 16 < int(ip_spl[1]) < 32)
+                    or (ip_spl[0] == "192" and ip_spl[1] == "168")):
+                host = ip_host[ip_dst] = ""
+            else: #use whois if not local address
+                print(ip_dst)
+                try:
+                    w = whois.whois(ip_dst)
+                    if w.domain_name is None:
+                        host = ip_host[ip_dst] = ""
+                    elif isinstance(w.domain_name, (list,)):
+                        host = ip_host[ip_dst] = w.domain_name[0].lower()
+                    else:
+                        host = ip_host[ip_dst] = w.domain_name.lower()
+                except:
+                    host = ip_host[ip_dst] = ""
+
         out[i] += "\t" + host #append host as last column of output
 
+    #write output file
     header = "frame_num\tts\tts_delta\tframe_len\tip_src\tip_dst\thost\n"
     with open(out_txt, "w") as f:
         f.write(header + "\n".join(out))
