@@ -1,9 +1,7 @@
 import os
 import sys
-import time
-import copy
-from multiprocessing import Process
 from multiprocessing import Manager
+from multiprocessing import Process
 
 import numpy as np
 import pandas as pd
@@ -24,6 +22,7 @@ cols_feat = ["start_time", "end_time", "meanBytes", "minBytes", "maxBytes", "med
 
 random_ratio = 0.8
 num_per_exp = 10
+
 
 #is_error is either 0 or 1
 def print_usage(is_error):

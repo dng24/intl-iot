@@ -1,20 +1,21 @@
-import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
-import warnings
-import os
-from sklearn.metrics import fbeta_score, precision_score, recall_score, confusion_matrix,f1_score
 import itertools
+import os
 import pickle
-from scipy.stats import multivariate_normal
-from matplotlib import pyplot as plt,style
-from multiprocessing import Pool
 import sys
+import warnings
+
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt, style
+from scipy.stats import multivariate_normal
+from sklearn.metrics import fbeta_score, precision_score, recall_score, confusion_matrix
+from sklearn.model_selection import train_test_split
 
 import Constants as c
 
 style.use('ggplot')
 np.random.seed(42)
+
 
 #is_error is either 0 or 1
 def print_usage(is_error):
@@ -78,7 +79,6 @@ def main():
             print(c.NO_PERM % ("features directory", root_feature, "execute"), file=sys.stderr)
 
     #check root_model
-    errors = False
     if not os.path.isdir(root_model):
         errors = True
         print(c.INVAL % ("Model directory", root_model, "directory"), file=sys.stderr)
@@ -102,7 +102,7 @@ def main():
     if errors:
         print_usage(1)
 
-    print("Input training features: %s\nInput models: %s\nOutput anomaly model: %s\n"
+    print("Input training features: %s\nInput tagged models: %s\nOutput anomaly model: %s\n"
           % (root_feature, root_model, root_output))
 
     lfiles = []
@@ -128,7 +128,7 @@ def main():
         anomaly_data = pd.read_csv('./sample-anomaly/cloudcam.csv')
         anomaly_data = anomaly_data.sample(round(data.shape[0] * 0.10))
         anomaly_data['state'] = 'anomaly'
-        data_features = data.drop(['device','hosts'], axis=1).fillna(-1)
+        data_features = data.drop(['device', 'hosts'], axis=1).fillna(-1)
 
         anomaly_features = anomaly_data.drop(['device'], axis=1).fillna(-1)
 
@@ -179,6 +179,7 @@ def main():
         with open(model_filepath, "wb") as f:
             pickle.dump(d, f)
         print("Model written to \"%s\"" % model_filepath)
+
 
 if __name__ == "__main__":
     main()

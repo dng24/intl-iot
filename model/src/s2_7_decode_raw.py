@@ -1,12 +1,14 @@
-import sys
 import os
+import sys
 from multiprocessing import Process
+
 import whois
 
 import Constants as c
 
 #In: in_pcap_txt out_decoded_dir [num_processes]
 #Out: tab-delim txt w/ header: frame_num\tts\tts_delta\tframe_len\tip_src\tip_dst\thost
+
 
 #is_error is either 0 or 1
 def print_usage(is_error):
@@ -96,8 +98,9 @@ def run(files, out_dir):
         else:
             extract_pcap(f, out_txt)
 
+
 def main():
-    [ print_usage(0) for arg in sys.argv if arg in ("-h", "--help") ]
+    [print_usage(0) for arg in sys.argv if arg in ("-h", "--help")]
 
     print("Running %s..." % sys.argv[0])
 
@@ -178,6 +181,7 @@ def main():
 
     for p in procs:
         p.join()
+
 
 if __name__ == "__main__":
     main()

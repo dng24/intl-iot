@@ -1,7 +1,7 @@
-import sys
-import os
-import math
 import argparse
+import math
+import os
+import sys
 from linecache import getline
 from multiprocessing import Process
 
@@ -9,6 +9,7 @@ import Constants as c
 
 #In: -i in_decoded_dir -o out_dir [-t time window] [-s slide_interval] [-p num_processes]
 #Out: tab-delim txt w/ header: frame_num\tts\tts_delta\tframe_len\tip_src\tip_dst\thost
+
 
 #is_error is either 0 or 1
 def print_usage(is_error): 
@@ -42,7 +43,6 @@ def write_file(start_idx, end_idx, in_file, out_file):
 
 def run(pid, files, src, dest, slide_int, time_window):
     for fpath in files:
-        times = []
         with open(fpath, "r") as f:
             times = []
             for l in f:
@@ -173,7 +173,7 @@ def main():
     if not os.path.isdir(args.dest_dir):
         os.system("mkdir -pv %s" % args.dest_dir)
 
-    files = [ [] for _ in range(num_proc) ]
+    files = [[] for _ in range(num_proc)]
 
     index = 0
     for root, dirs, fs in os.walk(args.dec_dir):
@@ -192,6 +192,7 @@ def main():
         p = Process(target=run, args=(pid, files, args.dec_dir, args.dest_dir, slide_int, time_window))
         procs.append(p)
         p.start()
+
 
 if __name__ == "__main__":
     main()

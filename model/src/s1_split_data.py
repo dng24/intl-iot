@@ -1,11 +1,12 @@
-import sys
 import os
 import random
+import sys
 
 import Constants as c
 
 #In: in_pcap_dir out_train_txt [out_test_txt]
 #Out: list of pcap file paths in in_pcap_dir
+
 
 # is_error is either 0 or 1
 def print_usage(is_error):

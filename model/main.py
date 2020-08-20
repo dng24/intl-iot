@@ -1,9 +1,10 @@
-import sys
-import os
-import time
 import argparse
+import os
+import sys
+import time
 
 from src import Constants as c
+
 
 #is_error is either 0 or 1
 def print_usage(is_error):
@@ -88,7 +89,7 @@ def main():
           % (c.PATH, time.strftime("%A %d %B %Y %H:%M:%S %Z", time.localtime(start_time))))
     # Thursday 11 June 2020 11:37:02 EDT
 
-    if args.models == None:
+    if args.models is None:
         args.models = ["d", "k", "n", "r", "s"]
 
     #Error checking and script checks
@@ -174,7 +175,7 @@ def main():
 
         cmd = "python3 %s %s %s" % (c.FIND_IDLE, c.FEAT_IDLE_DIR, c.MODEL_IDLE_DIR)
         print_step("\nStep 4: Detecting idle data in the model(s)...\n$ %s" % cmd)
-        run_cmd(cmd, c.FIND_ANOM)
+        run_cmd(cmd, c.FIND_IDLE)
     
     #Run tagged pipeline
     if args.tagged_dir != "":
@@ -249,6 +250,7 @@ def main():
     
     print("\nEnd time: %s\nElapsed time: %s hours %s minutes %s seconds\n\nContent analysis finished."
           % (time.strftime("%A %d %B %Y %H:%M:%S %Z", time.localtime(end_time)), hrs, minute, sec))
+
 
 if __name__ == "__main__":
     main()

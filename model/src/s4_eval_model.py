@@ -1,39 +1,35 @@
-import warnings
-import matplotlib
-
-matplotlib.use("Agg")
-import os
-import sys
 import argparse
+import os
 import pickle
-import numpy as np
-import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.cluster import MiniBatchKMeans
-from sklearn.cluster import DBSCAN
-from sklearn.manifold import TSNE
-from sklearn.preprocessing import LabelBinarizer
-from sklearn.metrics.cluster import homogeneity_score
-from sklearn.metrics.cluster import completeness_score
-from sklearn.metrics.cluster import v_measure_score
-from sklearn.metrics.cluster import adjusted_rand_score
-from sklearn.metrics import silhouette_score
-from sklearn.metrics import accuracy_score
-from sklearn.model_selection import train_test_split
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+import sys
 import time
 import warnings
-from sklearn.cluster import SpectralClustering
-from sklearn.metrics import f1_score
+from multiprocessing import Pool
 
 import matplotlib
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt
+from sklearn.cluster import DBSCAN
+from sklearn.cluster import MiniBatchKMeans
+from sklearn.cluster import SpectralClustering
+from sklearn.decomposition import PCA
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.manifold import TSNE
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import silhouette_score
+from sklearn.metrics .cluster import adjusted_rand_score
+from sklearn.metrics.cluster import completeness_score
+from sklearn.metrics.cluster import homogeneity_score
+from sklearn.metrics.cluster import v_measure_score
+from sklearn.model_selection import train_test_split
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.preprocessing import LabelBinarizer
+from sklearn.preprocessing import StandardScaler
+
+import Constants as c
 
 matplotlib.use("Agg")
-from matplotlib import pyplot as plt
-from multiprocessing import Pool
-import Constants as c
 
 """
 Output: root_model/{alg}/*.models
@@ -54,6 +50,7 @@ num_pools = 12
 #default_models = ['dbscan', 'kmeans', 'knn', 'rf', 'spectral']
 default_models = ['knn']
 model_list = []
+
 
 #is_error is either 0 or 1
 def print_usage(is_error):
@@ -156,6 +153,7 @@ def train_models():
     lfiles = []
     lparas = []
     ldnames = []
+    dname = ""
     for csv_file in os.listdir(root_feature):
         if csv_file.endswith('.csv'):
             train_data_file = '%s/%s' % (root_feature, csv_file)
@@ -168,7 +166,8 @@ def train_models():
     print("Processing %s..." % dname)
     list_results = p.map(eid_wrapper, lparas)
     for ret in list_results:
-        if ret is None or len(ret) == 0: continue
+        if ret is None or len(ret) == 0: 
+            continue
         for res in ret:
             tmp_outfile = res[0]
             tmp_res = res[1:]
@@ -287,9 +286,8 @@ def eval_individual_device(train_data_file, dname, specified_models=None):
             except:
                 y_predicted_1d = y_predicted
 
-
-            if len(set(y_predicted_1d)) > 1: _silhouette = silhouette_score(X_test, y_predicted_1d)
-
+            if len(set(y_predicted_1d)) > 1:
+                _silhouette = silhouette_score(X_test, y_predicted_1d)
 
         elif model_alg == 'kmeans':
             print('  kmeans: n_clusters=%s' % num_lables)
@@ -386,7 +384,7 @@ def eval_individual_device(train_data_file, dname, specified_models=None):
         """
         Print to Terminal 
         """
-        print('    model -> %s' % (model_file))
+        print('    model -> %s' % model_file)
         print('    labels -> %s' % label_file)
         print('\t' + '\n\t'.join(unique_labels) + '\n')
         if model_alg not in ['rf']:

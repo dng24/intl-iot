@@ -1,15 +1,17 @@
-import pandas as pd
-import numpy as np
-import warnings
 import itertools
-import pickle
-from matplotlib import pyplot as plt,style
 import json
 import os
+import pickle
 import sys
-from unsupervised_classification import unsupervised_classification
-from retrain import retrain_model
+import warnings
+
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt, style
+
 import Constants as c
+from retrain import retrain_model
+from unsupervised_classification import unsupervised_classification
 
 warnings.simplefilter("ignore", category=DeprecationWarning)
 style.use('ggplot')
@@ -17,6 +19,7 @@ np.random.seed(42)
 
 #In: train_features_dir untagged_features_dir tagged_models_dir [idle_models_dir] out_results_dir
 #Out: Directory containing predictions
+
 
 #is_error is either 0 or 1
 def print_usage(is_error):
@@ -79,7 +82,7 @@ def plot_confusion_matrix(cm, classes, recall, precision, f2, f1, normalize=Fals
 
 def load_data(path):
     anomaly_data = pd.read_csv(path)
-   # anomaly_data = anomaly_data.drop(anomaly_data.columns[0], axis=1)
+    # anomaly_data = anomaly_data.drop(anomaly_data.columns[0], axis=1)
     return anomaly_data
 
 
@@ -122,7 +125,7 @@ def filter_idle(ss, data, multivariate_model_dict, dev_result_dir):
     if not os.path.isdir(dev_result_dir):
         os.system("mkdir -pv %s" % dev_result_dir)
 
-    with open(dev_result_dir+'/idle_output.txt','w+') as f:
+    with open(dev_result_dir+'/idle_output.txt', 'w+') as f:
         f.write(json.dumps(output_dict, cls=NumpyEncoder))
     return unknown_data, idle_data
 
@@ -131,7 +134,7 @@ def action_classification_model(data, action_class_dict):
     ss = action_class_dict['standard_scaler']
     pca = action_class_dict['pca']
     trained_model = action_class_dict['trained_model']
-    transformed_data = ss.transform(data.drop(['state','predictions'], axis=1))
+    transformed_data = ss.transform(data.drop(['state', 'predictions'], axis=1))
     transformed_data = pca.transform(transformed_data)
     transformed_data = pd.DataFrame(transformed_data)
     transformed_data = transformed_data.iloc[:, :4]
@@ -141,7 +144,7 @@ def action_classification_model(data, action_class_dict):
     return data
 
 
-def final_accuracy(final_data,dev_result_dir):
+def final_accuracy(final_data):
     global di
     y_test = final_data['state'].map(di)
     y_predict = final_data['predictions']
@@ -161,7 +164,7 @@ def run_process(features_file, dev_result_dir, base_model_file, anomaly_model_fi
     action_classification_model_dict = pickle.load(open(base_model_file, 'rb'))
     ss = action_classification_model_dict['standard_scaler']
     anomaly_model = pickle.load(open(anomaly_model_file, 'rb'))
-    if not idle_model_file is None:
+    if idle_model_file is not None:
         idle_model = pickle.load(open(idle_model_file, 'rb'))
 
     normal_data, anomalous_data = filter_anomaly(ss, anomaly_data, anomaly_model, dev_result_dir)
@@ -172,11 +175,10 @@ def run_process(features_file, dev_result_dir, base_model_file, anomaly_model_fi
     self_labelled_data['predictions'] = unsupervised_classification(normal_data, device,
                                                                     hosts_normal, dev_result_dir)
 
-
     if anomalous_data.shape[0] == 0:
         print("No Labelled Anomalous data.")
         final_data = self_labelled_data
-        y_predict = final_accuracy(final_data, dev_result_dir)
+        y_predict = final_accuracy(final_data)
         out_dict = {'start_time': start_time, 'end_time': end_time, 'tagged': final_data['state'],
                     'prediction': y_predict}
         out_df = pd.DataFrame(out_dict)
@@ -188,7 +190,7 @@ def run_process(features_file, dev_result_dir, base_model_file, anomaly_model_fi
         anomalous_data = action_classification_model(anomalous_data, action_classification_model_dict)
         anomalous_data['predictions'] = anomalous_data['predictions'].map(reverse_di).fillna("anomaly")
         final_data = self_labelled_data.append(anomalous_data).sort_index()
-        y_predict = final_accuracy(final_data, dev_result_dir)
+        y_predict = final_accuracy(final_data)
         out_dict = {'start_time': start_time, 'end_time': end_time,
                     'tagged': final_data['state'], 'prediction': y_predict}
         out_df = pd.DataFrame(out_dict)
@@ -249,12 +251,12 @@ def main():
     #check training features dir
     errors = check_dir("Training features directory", train_features_dir)
     #check untagged features dir
-    errors = check_dir("Untagged features directory", untagged_features_dir)
+    errors = check_dir("Untagged features directory", untagged_features_dir) or errors
     #check tagged model dir
-    errors = check_dir("Tagged model directory", model_dir)
+    errors = check_dir("Tagged model directory", model_dir) or errors
     if has_idle:
         #check idle model dir
-        errors = check_dir("Idle model directory", idle_dir)
+        errors = check_dir("Idle model directory", idle_dir) or errors
 
     #check results_dir if it exists
     if os.path.isdir(results_dir):
@@ -308,7 +310,7 @@ def main():
                 continue
 
             labels = label(device_label)
-            di,reverse_di = dictionary_create(labels)
+            di, reverse_di = dictionary_create(labels)
             dev_result_dir = os.path.join(results_dir, device + '_results/')
             print(f"Running process for {device}")
             run_process(features_file, dev_result_dir, base_model_file, anomaly_model_file,

@@ -1,24 +1,25 @@
-import pandas as pd
-import numpy as np
-from sklearn.model_selection import train_test_split
-import warnings
-import os
-from sklearn.metrics import fbeta_score, precision_score, recall_score, confusion_matrix,f1_score
 import itertools
+import os
 import pickle
-from scipy.stats import multivariate_normal
-from matplotlib import pyplot as plt,style
-from multiprocessing import Pool
 import sys
+import warnings
+
+import numpy as np
+import pandas as pd
+from matplotlib import pyplot as plt, style
+from scipy.stats import multivariate_normal
+from sklearn.metrics import fbeta_score, precision_score, recall_score, confusion_matrix
+from sklearn.model_selection import train_test_split
 
 import Constants as c
 
 style.use('ggplot')
 np.random.seed(42)
 
+
 #is_error is either 0 or 1
 def print_usage(is_error):
-    print(c.FIND_ANOM_USAGE, file=sys.stderr) if is_error else print(c.FIND_ANOM_USAGE)
+    print(c.FIND_IDLE_USAGE, file=sys.stderr) if is_error else print(c.FIND_IDLE_USAGE)
     exit(is_error)
 
 
@@ -40,7 +41,7 @@ def plot_confusion_matrix(cm, classes, recall, precision, f2, f1, normalize=Fals
     plt.tight_layout()
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
-    plt.text(0,2.3, f" Recall:{recall},\n Precision:{precision},\n F2 Score:{f2},\n F1 Score:{f1}", fontsize=12)
+    plt.text(0, 2.3, f" Recall:{recall},\n Precision:{precision},\n F2 Score:{f2},\n F1 Score:{f1}", fontsize=12)
     plt.show()
 
 
@@ -102,7 +103,6 @@ def main():
             ldnames.append(dname)
             lparas.append((train_data_file, dname))
 
-
     for i, j in enumerate(lparas):
         # Data Loading
         print(f"Loading Normal data from --> {lparas[i][1]}")
@@ -110,7 +110,7 @@ def main():
         anomaly_data = pd.read_csv('./sample-anomaly/cloudcam.csv')
         anomaly_data = anomaly_data.sample(round(data.shape[0] * 0.10))
         anomaly_data['state'] = 'anomaly'
-        data_features = data.drop(['device','hosts'], axis=1).fillna(-1)
+        data_features = data.drop(['device', 'hosts'], axis=1).fillna(-1)
 
         anomaly_features = anomaly_data.drop(['device'], axis=1).fillna(-1)
 
@@ -158,6 +158,7 @@ def main():
         with open(model_file, "wb") as f:
             pickle.dump(d, f)
         print("Model written to \"%s\"" % model_file)
+
 
 if __name__ == "__main__":
     main()

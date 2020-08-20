@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 #script paths
 PATH = sys.argv[0]
@@ -98,7 +98,6 @@ At least one required:
   -i TAGGED_DIR   path to the directory containing pcap files with known device
                     activity to generate the models; see the traffic/ section
                     of model_details.md for the structure of this directory
-  
   
   -l IDLE_DIR     path to the directory containing pcap files with idle device
                     activity to generate the idle activity detection models.
@@ -217,6 +216,22 @@ Optional arguments:
   -h print this usage statement and exit
 
 Note: If no model is chosen, all of the models will be produced.
+
+For more information, see the README or model_details.md.""".format(prog_name=PATH)
+
+#find_idle.py
+FIND_IDLE_USAGE = """
+Usage: python3 {prog_name} in_idle_features_dir out_idle_models_dir
+
+Generates models from idle data.
+
+Example: python3 {prog_name} idle_features/us/ idle_models/us/
+
+Arguments:
+  in_idle_features_dir: path to a directory containing CSV files of statistically-analyzed
+                          idle pcap files
+  out_idle_models_dir:  path to a directory to put the generated models; this directory
+                          will be created if it does not exist
 
 For more information, see the README or model_details.md.""".format(prog_name=PATH)
 
