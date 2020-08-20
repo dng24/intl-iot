@@ -98,9 +98,12 @@ def main():
         if not os.access(root_output, os.X_OK):
             errors = True
             print(c.NO_PERM % ("output directory", root_output, "execute"), file=sys.stderr)
-    print(f'Root output --> {root_output}')
+    
     if errors:
         print_usage(1)
+
+    print("Input training features: %s\nInput models: %s\nOutput anomaly model: %s\n"
+          % (root_feature, root_model, root_output))
 
     lfiles = []
     lparas= []
@@ -167,14 +170,15 @@ def main():
 
         cm = confusion_matrix(valid['state'].values, y_hat)
         print(cm)
-        print(f"Final treshold --> {final_tresh}")
+        print(f"Final threshold --> {final_tresh}")
         d = dict({'mvmodel': model, 'treshold': final_tresh})
         if not os.path.isdir("%s/model" % root_output):
             os.system("mkdir -pv %s" % root_output)
-        f = open(f"{root_output}/multivariate_model_{lparas[i][1]}.pkl", "wb")
-        pickle.dump(d, f)
-        f.close()
 
+        model_filepath = f"{root_output}/multivariate_model_{lparas[i][1]}.pkl"
+        with open(model_filepath, "wb") as f:
+            pickle.dump(d, f)
+        print("Model written to \"%s\"" % model_filepath)
 
 if __name__ == "__main__":
     main()

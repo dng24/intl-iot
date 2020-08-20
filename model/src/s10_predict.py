@@ -43,7 +43,7 @@ def dictionary_create(labels):
         reverse_di.update({i:labels[i]})
 
     di.update({'normal':len(labels)})
-    return di,reverse_di
+    return di, reverse_di
     
 
 class NumpyEncoder(json.JSONEncoder):
@@ -53,11 +53,8 @@ class NumpyEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def plot_confusion_matrix(cm, classes,
-                          recall,precision,f2,f1,
-                          normalize=False,
-                          title='Confusion matrix',
-                          cmap=plt.cm.Blues):
+def plot_confusion_matrix(cm, classes, recall, precision, f2, f1, normalize=False,
+                          title='Confusion matrix', cmap=plt.cm.Blues):
     plt.figure()
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
@@ -76,7 +73,7 @@ def plot_confusion_matrix(cm, classes,
     plt.ylabel('True label')
     plt.xlabel('Predicted label')
     plt.xticks(rotation=90)
-    plt.text(12,0, f" Recall:{recall},\n Precision:{precision},\n F2 Score:{f2},\n F1 Score:{f1}", fontsize=12)
+    plt.text(12, 0, f" Recall:{recall},\n Precision:{precision},\n F2 Score:{f2},\n F1 Score:{f1}", fontsize=12)
     return plt
 
 
@@ -86,7 +83,7 @@ def load_data(path):
     return anomaly_data
 
 
-def filter_anomaly(ss,anomaly_data,multivariate_model_dict,dev_result_dir):
+def filter_anomaly(ss, anomaly_data, multivariate_model_dict, dev_result_dir):
     mv_model = multivariate_model_dict['mvmodel']
     treshold = multivariate_model_dict['treshold']
     y_test = anomaly_data['state'].apply(lambda x: 1 if x == 'anomaly' else 0)
@@ -96,41 +93,41 @@ def filter_anomaly(ss,anomaly_data,multivariate_model_dict,dev_result_dir):
     anomalous_data = anomaly_data[anomaly_data['anomalous'] == 1]
     normal_data['predictions'] = 'unknown'
     anomalous_data['predictions'] = 'anomalous'
-    anomalous_data = anomalous_data.drop(['anomalous'],axis=1)
-    normal_data = normal_data.drop(['anomalous'],axis=1)
+    anomalous_data = anomalous_data.drop(['anomalous'], axis=1)
+    normal_data = normal_data.drop(['anomalous'], axis=1)
     output_dict = {'predictions': y_predict}
     if not os.path.isdir(dev_result_dir):
         os.system("mkdir -pv %s" % dev_result_dir)
 
-    with open(dev_result_dir+'/anomaly_output.txt','w+') as f:
-        f.write(json.dumps(output_dict,cls=NumpyEncoder))
+    with open(dev_result_dir+'/anomaly_output.txt', 'w+') as f:
+        f.write(json.dumps(output_dict, cls=NumpyEncoder))
 
-    return normal_data,anomalous_data
+    return normal_data, anomalous_data
 
 
 
-def filter_idle(ss,data,multivariate_model_dict,dev_result_dir):
+def filter_idle(ss, data, multivariate_model_dict, dev_result_dir):
     mv_model = multivariate_model_dict['mvmodel']
     treshold = multivariate_model_dict['treshold']
     y_test = data['state'].apply(lambda x: 1 if x == 'anomaly' else 0)
-    y_predict = (mv_model.logpdf(data.drop(['state','predictions'], axis=1).values) < treshold).astype(int)
+    y_predict = (mv_model.logpdf(data.drop(['state', 'predictions'], axis=1).values) < treshold).astype(int)
     data['idle'] = y_predict
     unknown_data = data[data['idle'] == 0]
     idle_data = data[data['idle'] == 1]
     unknown_data['predictions'] = 'unknown'
     idle_data['predictions'] = 'idle'
     output_dict = {'predictions': y_predict}
-    unknown_data = unknown_data.drop(['idle'],axis=1)
-    idle_data = idle_data.drop(['idle'],axis=1)
+    unknown_data = unknown_data.drop(['idle'], axis=1)
+    idle_data = idle_data.drop(['idle'], axis=1)
     if not os.path.isdir(dev_result_dir):
         os.system("mkdir -pv %s" % dev_result_dir)
 
     with open(dev_result_dir+'/idle_output.txt','w+') as f:
-        f.write(json.dumps(output_dict,cls=NumpyEncoder))
-    return unknown_data,idle_data
+        f.write(json.dumps(output_dict, cls=NumpyEncoder))
+    return unknown_data, idle_data
 
 
-def action_classification_model(data,action_class_dict):
+def action_classification_model(data, action_class_dict):
     ss = action_class_dict['standard_scaler']
     pca = action_class_dict['pca']
     trained_model = action_class_dict['trained_model']
@@ -151,8 +148,8 @@ def final_accuracy(final_data,dev_result_dir):
     return y_predict
 
 
-def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file,idle_model_file,model_dir,
-                trained_features_file):
+def run_process(features_file, dev_result_dir, base_model_file, anomaly_model_file,
+                idle_model_file, model_dir, trained_features_file):
     anomaly_data = load_data(features_file)
     original_data = anomaly_data
     #print(original_data.head())
@@ -160,7 +157,7 @@ def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file,
     start_time = anomaly_data['start_time']
     end_time = anomaly_data['end_time']
     device = list(set(anomaly_data.device))[0]
-    anomaly_data = anomaly_data.drop(['device','hosts'], axis=1)
+    anomaly_data = anomaly_data.drop(['device', 'hosts'], axis=1)
     action_classification_model_dict = pickle.load(open(base_model_file, 'rb'))
     ss = action_classification_model_dict['standard_scaler']
     anomaly_model = pickle.load(open(anomaly_model_file, 'rb'))
@@ -172,8 +169,8 @@ def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file,
     #normal_data['predictions'] = di['normal']
     hosts_normal = [hosts[i] for i in normal_data.index]
     self_labelled_data = normal_data
-    afaf = unsupervised_classification(normal_data,device,hosts_normal,dev_result_dir)
-    self_labelled_data['predictions'] = afaf #unsupervised_classification(normal_data,device,hosts_normal,dev_result_dir)
+    self_labelled_data['predictions'] = unsupervised_classification(normal_data, device,
+                                                                    hosts_normal, dev_result_dir)
 
 
     if anomalous_data.shape[0] == 0:
@@ -186,7 +183,7 @@ def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file,
         out_df['prediction'] = out_df['prediction'].map(reverse_di).fillna("normal")
         out_df.to_csv(dev_result_dir + '/model_results.csv', index=False)
         original_data['state'] = y_predict
-        retrain_model(original_data, model_dir,trained_features_file)
+        retrain_model(original_data, model_dir, trained_features_file)
     else:
         anomalous_data = action_classification_model(anomalous_data, action_classification_model_dict)
         anomalous_data['predictions'] = anomalous_data['predictions'].map(reverse_di).fillna("anomaly")
@@ -197,7 +194,7 @@ def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file,
         out_df = pd.DataFrame(out_dict)
         out_df.to_csv(dev_result_dir + '/model_results.csv', index=False)
         original_data['state'] = y_predict
-        retrain_model(original_data,model_dir,trained_features_file)
+        retrain_model(original_data, model_dir, trained_features_file)
 
 
 #Check dir to make sure it exists and has read/execute permission
@@ -272,6 +269,13 @@ def main():
         print_usage(1)
     #end error checking
 
+    print("Input training features: %s\nInput untagged features: %s\nInput Tagged models: %s"
+          % (train_features_dir, untagged_features_dir, model_dir))
+    if has_idle:
+        print("Input idle models: %s\nOutput results: %s" % (idle_dir, results_dir))
+    else:
+        print("Output results: %s" % results_dir)
+
     for path in os.listdir(untagged_features_dir):
         # base_model_name = ''
         # anomaly_model_file = ''
@@ -299,7 +303,6 @@ def main():
             for feat_path in os.listdir(train_features_dir):
                 if feat_path == f'{device}.csv':
                     trained_features_file = f'{train_features_dir}/{feat_path}'
-            print(trained_features_file)
 
             if errors:
                 continue
@@ -309,7 +312,7 @@ def main():
             dev_result_dir = os.path.join(results_dir, device + '_results/')
             print(f"Running process for {device}")
             run_process(features_file, dev_result_dir, base_model_file, anomaly_model_file,
-                        idle_model_file, model_dir,trained_features_file)
+                        idle_model_file, model_dir, trained_features_file)
             print("Results for %s written to \"%s\"" % (device, dev_result_dir))
 
 

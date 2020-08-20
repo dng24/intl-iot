@@ -265,7 +265,7 @@ For more information, see the README or model_details.md.""".format(prog_name=PA
 
 #predict.py
 PREDICT_USAGE = """
-Usage: python3 {prog_name} in_train_feat_dir in_untagged_feat_dir in_models_dir out_results_dir
+Usage: python3 {prog_name} in_train_feat_dir in_untagged_feat_dir in_tagged_models_dir [in_idle_models_dir] out_results_dir
 
 Uses machine learning models to predict device activity of unknown traffic.
 
@@ -276,8 +276,10 @@ Arguments:
                           tagged training pcap files
   in_untagged_feat_dir: path to a directory containing CSV files of statistically-analyzed
                           untagged pcap files
-  in_models_dir:        path to a directory containing machine-learning models to predict
-                          device activity
+  in_tagged_models_dir: path to a directory containing machine-learning tagged models to
+                          predict device activity
+  in_idle_models_dir:   path to a directory containing idle models; this argument is
+                          optional, and currently does is not used in the script
   out_results_dir:      path to the directory to place prediction results; directory will
                           be generated if it currently does not exist
 

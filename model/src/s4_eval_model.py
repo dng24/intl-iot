@@ -153,15 +153,11 @@ def train_models():
     """
     Scan feature folder for each device
     """
-    print('root_feature: %s' % root_feature)
-    print('root_model: %s' % root_model)
-    print('root_output: %s' % root_output)
     lfiles = []
     lparas = []
     ldnames = []
     for csv_file in os.listdir(root_feature):
         if csv_file.endswith('.csv'):
-            print(csv_file)
             train_data_file = '%s/%s' % (root_feature, csv_file)
             dname = csv_file[:-4]
             lfiles.append(train_data_file)
@@ -169,7 +165,7 @@ def train_models():
             lparas.append((train_data_file, dname))
     p = Pool(num_pools)
     t0 = time.time()
-    print(dname)
+    print("Processing %s..." % dname)
     list_results = p.map(eid_wrapper, lparas)
     for ret in list_results:
         if ret is None or len(ret) == 0: continue
@@ -431,7 +427,6 @@ def tsne_plot(X, y, figfile, pp=30):
 
     print('\tSaved the tSNE plot to %s' % figfile)
     plt.savefig(figfile, bbox_inches="tight")
-
 
 
 if __name__ == '__main__':
