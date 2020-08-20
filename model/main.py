@@ -69,8 +69,8 @@ def main():
     #Options
     parser = argparse.ArgumentParser(usage=c.MAIN_USAGE, add_help=False)
     parser.add_argument("-i", dest="tagged_dir", default="")
-    parser.add_argument("-l", dest="idle_dir", default="")
     parser.add_argument("-u", dest="untagged_dir", default="")
+    parser.add_argument("-l", dest="idle_dir", default="")
     parser.add_argument("-d", dest="models", action="append_const", const="d")
     parser.add_argument("-k", dest="models", action="append_const", const="k")
     parser.add_argument("-n", dest="models", action="append_const", const="n")
@@ -93,21 +93,27 @@ def main():
 
     #Error checking and script checks
     #check scripts
-    errors = check_files(c.SRC_DIR, c.SCRIPTS)
+    if check_files(c.SRC_DIR, c.SCRIPTS):
+        return
 
-    #check -i tagged dir
-    if (args.tagged_dir == "") or (args.idle_dir == ""):
+    errors = False
+    #check -i tagged dir and -l idle dir
+    if args.tagged_dir == "" and args.idle_dir == "":
+        errors = True
+        print(c.NO_IN_DIR, file=sys.stderr)
+    elif args.tagged_dir == "" and args.untagged_dir != "":
         errors = True
         print(c.NO_TAGGED_DIR, file=sys.stderr)
-    else:
+    
+    if args.tagged_dir != "":
         errors = check_dir(args.tagged_dir, "Tagged pcap input directory") or errors
-        errors = check_dir(args.idle_dir, "Tagged pcap input directory") or errors
+    if args.idle_dir != "":
+        errors = check_dir(args.idle_dir, "Idle pcap input directory") or errors
+
     #check -u untagged dir
     if args.untagged_dir != "":
         errors = check_dir(args.untagged_dir, "Untagged pcap input directory") or errors
 
-    print("HELOOOOOOO")
-    print(args.idle_dir)
     #check -p number processes
     bad_proc = False
     try:
@@ -137,62 +143,70 @@ def main():
         mods.append("spectral")
 
     mods_str = ", ".join(mods)
+    tagged_print = "None" if args.tagged_dir == "" else args.tagged_dir
     untagged_print = "None" if args.untagged_dir == "" else args.untagged_dir
+    idle_print = "None" if args.idle_dir == "" else args.idle_dir
     print("Tagged directory:     %s\n"
           "Untagged directory:   %s\n"
+          "Idle directory:       %s\n"
           "Model(s) to generate: %s\n"
           "Output directory:     %s\n"
           "Number of processes:  %s\n"
-          % (args.tagged_dir, untagged_print, mods_str, args.out_dir, num_proc))
+          % (tagged_print, untagged_print, idle_print, mods_str, args.out_dir, num_proc))
 
     if not os.path.isdir(args.out_dir):
         os.system("mkdir -pv %s" % args.out_dir)
 
-    #Run pipeline
-    cmd = "python3 %s %s %s" % (c.IDLE_DATA, args.idle_dir, c.IDLE_PATHS)
-    print_step("\nStep 1: Creating a text file of directories for the idle data.\n$ %s" % cmd)
-    run_cmd(cmd, c.IDLE_DATA)
+    #Run idle pipeline
+    if args.idle_dir != "":
+        print_step("\nRUNNING PIPELINE WITH IDLE DATA")
+        cmd = "python3 %s %s %s" % (c.SPLIT_DATA, args.idle_dir, c.IDLE_PATHS)
+        print_step("\nStep 1: Generating list of input pcaps for the idle data.\n$ %s" % cmd)
+        run_cmd(cmd, c.SPLIT_DATA)
 
-    cmd = "python3 %s %s %s %s" % (c.SPLIT_DATA, args.tagged_dir, c.TRAIN_PATHS, c.TEST_PATHS)
-    print_step("\nStep 1: Spliting pcaps into training and testing sets...\n$ %s" % cmd)
-    run_cmd(cmd, c.SPLIT_DATA)
+        cmd = "python3 %s %s %s %d" % (c.DEC_RAW, c.IDLE_PATHS, c.DEC_IDLE_DIR, num_proc)
+        print_step("\nStep 2: Decoding idle pcaps into human-readable form...\n$ %s" % cmd)
+        run_cmd(cmd, c.DEC_RAW)
 
-    cmd = "python3 %s %s %s %d" % (c.DEC_RAW, c.TRAIN_PATHS, c.DEC_TRAIN_DIR, num_proc)
-    print_step("\nStep 2.1: Decoding training pcaps into human-readable form...\n$ %s" % cmd)
-    run_cmd(cmd, c.DEC_RAW)
+        cmd = "python3 %s %s %s %d" % (c.GET_FEAT, c.DEC_IDLE_DIR, c.FEAT_IDLE_DIR, num_proc)
+        print_step("\nStep 3: Performing statistical analysis on idle set...\n$ %s" % cmd)
+        run_cmd(cmd, c.GET_FEAT)
 
-    cmd = "python3 %s %s %s %d" % (c.DEC_RAW, c.TEST_PATHS, c.DEC_TEST_DIR, num_proc)
-    print_step("\nStep 2.2: Decoding testing pcaps into human-readable form...\n$ %s" % cmd)
-    run_cmd(cmd, c.DEC_RAW)
+        cmd = "python3 %s %s %s" % (c.FIND_IDLE, c.FEAT_IDLE_DIR, c.MODEL_IDLE_DIR)
+        print_step("\nStep 4: Detecting idle data in the model(s)...\n$ %s" % cmd)
+        run_cmd(cmd, c.FIND_ANOM)
+    
+    #Run tagged pipeline
+    if args.tagged_dir != "":
+        print_step("\nRUNNING PIPELINE WITH TAGGED DATA")
+        cmd = "python3 %s %s %s %s" % (c.SPLIT_DATA, args.tagged_dir, c.TRAIN_PATHS, c.TEST_PATHS)
+        print_step("\nStep 1: Spliting pcaps into training and testing sets...\n$ %s" % cmd)
+        run_cmd(cmd, c.SPLIT_DATA)
 
-    cmd = "python3 %s %s %s %d" % (c.GET_FEAT, c.DEC_TRAIN_DIR, c.FEAT_TRAIN_DIR, num_proc)
-    print_step("\nStep 3.1: Performing statistical analysis on training set...\n$ %s" % cmd)
-    run_cmd(cmd, c.GET_FEAT)
+        cmd = "python3 %s %s %s %d" % (c.DEC_RAW, c.TRAIN_PATHS, c.DEC_TRAIN_DIR, num_proc)
+        print_step("\nStep 2.1: Decoding training pcaps into human-readable form...\n$ %s" % cmd)
+        run_cmd(cmd, c.DEC_RAW)
 
-    cmd = "python3 %s %s %s %d" % (c.GET_FEAT, c.DEC_TEST_DIR, c.FEAT_TEST_DIR, num_proc)
-    print_step("\nStep 3.2: Performing statistical analysis on testing set...\n$ %s" % cmd)
-    run_cmd(cmd, c.GET_FEAT)
+        cmd = "python3 %s %s %s %d" % (c.DEC_RAW, c.TEST_PATHS, c.DEC_TEST_DIR, num_proc)
+        print_step("\nStep 2.2: Decoding testing pcaps into human-readable form...\n$ %s" % cmd)
+        run_cmd(cmd, c.DEC_RAW)
 
-    cmd = "python3 %s %s %s %d" % (c.DEC_RAW, c.IDLE_PATHS, c.DEC_IDLE_DIR, num_proc)
-    print_step("\nStep 2.1: Decoding idle pcaps into human-readable form...\n$ %s" % cmd)
-    run_cmd(cmd, c.DEC_RAW)
+        cmd = "python3 %s %s %s %d" % (c.GET_FEAT, c.DEC_TRAIN_DIR, c.FEAT_TRAIN_DIR, num_proc)
+        print_step("\nStep 3.1: Performing statistical analysis on training set...\n$ %s" % cmd)
+        run_cmd(cmd, c.GET_FEAT)
 
-    cmd = "python3 %s %s %s %d" % (c.GET_FEAT, c.DEC_IDLE_DIR, c.FEAT_IDLE_DIR, num_proc)
-    print_step("\nStep 3.1: Performing statistical analysis on idle set...\n$ %s" % cmd)
-    run_cmd(cmd, c.GET_FEAT)
+        cmd = "python3 %s %s %s %d" % (c.GET_FEAT, c.DEC_TEST_DIR, c.FEAT_TEST_DIR, num_proc)
+        print_step("\nStep 3.2: Performing statistical analysis on testing set...\n$ %s" % cmd)
+        run_cmd(cmd, c.GET_FEAT)
 
-    models = "".join(args.models)
-    cmd = "python3 %s -i %s -o %s -%s" % (c.EVAL_MOD, c.FEAT_TRAIN_DIR, c.MODELS_DIR, models)
-    print_step("\nStep 4: Training data and creating model(s)...\n$ %s" % cmd)
-    run_cmd(cmd, c.EVAL_MOD)
+        models = "".join(args.models)
+        cmd = "python3 %s -i %s -o %s -%s" % (c.EVAL_MOD, c.FEAT_TRAIN_DIR, c.MODELS_DIR, models)
+        print_step("\nStep 4: Training data and creating model(s)...\n$ %s" % cmd)
+        run_cmd(cmd, c.EVAL_MOD)
 
-    cmd = "python3 %s %s %s" % (c.FIND_ANOM, c.FEAT_TRAIN_DIR, c.MODELS_DIR)
-    print_step("\nStep 5: Detecting anomalies in the model(s)...\n$ %s" % cmd)
-    run_cmd(cmd, c.FIND_ANOM)
-
-    cmd = "python3 %s %s %s" % (c.FIND_IDLE, c.FEAT_IDLE_DIR, c.MODELS_DIR)
-    print_step("\nStep 5: Detecting idle data in the model(s)...\n$ %s" % cmd)
-    run_cmd(cmd, c.FIND_ANOM)
+        cmd = "python3 %s %s %s" % (c.FIND_ANOM, c.FEAT_TRAIN_DIR, c.MODELS_DIR)
+        print_step("\nStep 5: Detecting anomalies in the model(s)...\n$ %s" % cmd)
+        run_cmd(cmd, c.FIND_ANOM)
 
     if args.untagged_dir != "":
         cmd = "find %s -name \"*.pcap\"" % args.untagged_dir
@@ -204,7 +218,8 @@ def main():
         print_step("\nStep 7: Decoding untagged pcaps into human-readable form...\n$ %s" % cmd)
         run_cmd(cmd, c.DEC_RAW)
 
-        cmd = "python3 %s -i %s -o %s -p %d" % (c.SLIDE_SPLIT, c.NEW_DEC_DIR, c.NEW_DEC_SPLIT_DIR, num_proc)
+        cmd = "python3 %s -i %s -o %s -p %d" % (c.SLIDE_SPLIT, c.NEW_DEC_DIR,
+                                                c.NEW_DEC_SPLIT_DIR, num_proc)
         print_step("\nStep 8: Organizing decoded pcaps...\n$ %s" % cmd)
         run_cmd(cmd, c.SLIDE_SPLIT)
 
@@ -212,7 +227,12 @@ def main():
         print_step("\nStep 9: Performing statistical analysis on untagged pcaps...\n$ %s" % cmd)
         run_cmd(cmd, c.GET_FEAT)
         
-        cmd = "python3 %s %s %s %s %s" % (c.PREDICT, c.NEW_FEAT_DIR, c.MODELS_DIR, c.RESULTS_DIR, c.FEAT_TRAIN_DIR)
+        if args.idle_dir == "":
+            cmd = "python3 %s %s %s %s %s" % (c.PREDICT, c.FEAT_TRAIN_DIR, c.NEW_FEAT_DIR,
+                                              c.MODELS_DIR, c.RESULTS_DIR)
+        else:
+            cmd = "python3 %s %s %s %s %s %s" % (c.PREDICT, c.FEAT_TRAIN_DIR, c.NEW_FEAT_DIR,
+                                                 c.MODELS_DIR, c.MODEL_IDLE_DIR, c.RESULTS_DIR)
         print_step("\nStep 10: Predicting device activity...\n$ %s" % cmd)
         run_cmd(cmd, c.PREDICT)
 

@@ -52,7 +52,6 @@ def main():
     print("Running %s..." % c.PATH)
 
     #root_feature = '/Users/abhijit/Desktop/GIT_Projects/intl-iot/model/features-testing1.1/us'
-    #root_model='/Users/abhijit/Desktop/GIT_Projects/intl-iot/models_final/features-testing1.1/us'
 
     #error checking
     #check that there are 2 args
@@ -61,8 +60,7 @@ def main():
         print_usage(1)
 
     root_feature = sys.argv[1]
-    root_model = sys.argv[2]
-    root_output = os.path.join(root_model, 'idle_model')
+    root_output = sys.argv[2]
 
     #check root_feature
     errors = False
@@ -77,19 +75,6 @@ def main():
             errors = True
             print(c.NO_PERM % ("features directory", root_feature, "execute"), file=sys.stderr)
 
-    #check root_model
-    errors = False
-    if not os.path.isdir(root_model):
-        errors = True
-        print(c.INVAL % ("Model directory", root_model, "directory"), file=sys.stderr)
-    else:
-        if not os.access(root_model, os.R_OK):
-            errors = True
-            print(c.NO_PERM % ("model directory", root_model, "read"), file=sys.stderr)
-        if not os.access(root_feature, os.X_OK):
-            errors = True
-            print(c.NO_PERM % ("model directory", root_model, "execute"), file=sys.stderr)
-
     #check root_output, if exists
     if os.path.isdir(root_output):
         if not os.access(root_output, os.W_OK):
@@ -98,7 +83,7 @@ def main():
         if not os.access(root_output, os.X_OK):
             errors = True
             print(c.NO_PERM % ("output directory", root_output, "execute"), file=sys.stderr)
-    print(f'Root output --> {root_output}')
+    
     if errors:
         print_usage(1)
 
@@ -164,14 +149,15 @@ def main():
         final_tresh = tresholds[scores[:, 2].argmax()]
         cm = confusion_matrix(valid['state'].values, y_hat)
         print(cm)
-        print(f"Final treshold --> {final_tresh}")
+        print(f"Final threshold --> {final_tresh}")
         d = dict({'mvmodel': model, 'treshold': final_tresh})
         if not os.path.isdir("%s/model" % root_output):
             os.system("mkdir -pv %s" % root_output)
-        f = open(f"{root_output}/multivariate_model_{lparas[i][1]}_idle.pkl", "wb")
-        pickle.dump(d, f)
-        f.close()
 
+        model_file = f"{root_output}/multivariate_model_{lparas[i][1]}_idle.pkl"
+        with open(model_file, "wb") as f:
+            pickle.dump(d, f)
+        print("Model written to \"%s\"" % model_file)
 
 if __name__ == "__main__":
     main()

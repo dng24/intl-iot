@@ -19,7 +19,7 @@ source env/bin/activate
 ```
 3) Install the following packages:
 ```Bash
-pip install numpy scipy pyshark geoip2 matplotlib dpkt pycrypto IPy pcapy scapy Impacket mysql-connector-python-rf pandas tldextract python-whois ipwhois psutil
+pip install numpy scipy pyshark geoip2 matplotlib dpkt pycrypto IPy pcapy scapy Impacket mysql-connector-python-rf pandas tldextract python-whois ipwhois psutil seaborn
 ```
 
 ### Download Datasets

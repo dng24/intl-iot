@@ -7,17 +7,16 @@ MODEL_DIR = os.path.dirname(PATH)
 if MODEL_DIR == "":
     MODEL_DIR = "."
 SRC_DIR = MODEL_DIR + "/src/"
-IDLE_DATA = SRC_DIR + "s0_idle_data_path.py"
 SPLIT_DATA = SRC_DIR + "s1_split_data.py"
 DEC_RAW = SRC_DIR + "s2_7_decode_raw.py"
 GET_FEAT = SRC_DIR + "s3_9_get_features.py"
 EVAL_MOD = SRC_DIR + "s4_eval_model.py"
+FIND_IDLE = SRC_DIR + "s4i_find_idle.py"
 FIND_ANOM = SRC_DIR + "s5_find_anomalies.py"
-FIND_IDLE = SRC_DIR + "s11_find_idle.py"
 SLIDE_SPLIT = SRC_DIR + "s8_slide_split.py"
 PREDICT = SRC_DIR + "s10_predict.py"
 
-SCRIPTS = [SPLIT_DATA, DEC_RAW, GET_FEAT, EVAL_MOD, FIND_ANOM, SLIDE_SPLIT, PREDICT]
+SCRIPTS = [SPLIT_DATA, DEC_RAW, GET_FEAT, EVAL_MOD, FIND_ANOM, FIND_IDLE, SLIDE_SPLIT, PREDICT]
 
 #output paths
 OUT_DIR = "results/"
@@ -26,21 +25,26 @@ for i, arg in enumerate(sys.argv):
         OUT_DIR = sys.argv[i + 1]
         break
 
-TRAIN_PATHS = os.path.join(OUT_DIR, "s1_train_paths.txt")
-TEST_PATHS = os.path.join(OUT_DIR, "s1_test_paths.txt")
-IDLE_PATHS = os.path.join(OUT_DIR, "s1_idle_paths.txt")
-DEC_TRAIN_DIR = os.path.join(OUT_DIR, "s2.1-train-decoded/")
-DEC_TEST_DIR = os.path.join(OUT_DIR, "s2.2-test-decoded/")
-DEC_IDLE_DIR = os.path.join(OUT_DIR, "s2.3-idle-decoded/")
-FEAT_TRAIN_DIR = os.path.join(OUT_DIR, "s3.1-train-features/")
-FEAT_TEST_DIR = os.path.join(OUT_DIR, "s3.2-test-features/")
-FEAT_IDLE_DIR = os.path.join(OUT_DIR, "s3.3-idle-features/")
-MODELS_DIR = os.path.join(OUT_DIR, "s4-5-6-models/")
-NEW_PATHS = os.path.join(OUT_DIR, "s6_untagged_paths.txt")
-NEW_DEC_DIR = os.path.join(OUT_DIR, "s7-untagged-decoded/")
-NEW_DEC_SPLIT_DIR = os.path.join(OUT_DIR, "s8-untagged-decoded-split/")
-NEW_FEAT_DIR = os.path.join(OUT_DIR, "s9-untagged-features/")
-RESULTS_DIR = os.path.join(OUT_DIR, "s10-results/")
+TAGGED_OUT = os.path.join(OUT_DIR, "tagged/")
+IDLE_OUT = os.path.join(OUT_DIR, "idle/")
+
+TRAIN_PATHS = os.path.join(TAGGED_OUT, "s1_train_paths.txt")
+TEST_PATHS = os.path.join(TAGGED_OUT, "s1_test_paths.txt")
+DEC_TRAIN_DIR = os.path.join(TAGGED_OUT, "s2.1-train-decoded/")
+DEC_TEST_DIR = os.path.join(TAGGED_OUT, "s2.2-test-decoded/")
+FEAT_TRAIN_DIR = os.path.join(TAGGED_OUT, "s3.1-train-features/")
+FEAT_TEST_DIR = os.path.join(TAGGED_OUT, "s3.2-test-features/")
+MODELS_DIR = os.path.join(TAGGED_OUT, "s4-5-models/")
+NEW_PATHS = os.path.join(TAGGED_OUT, "s6_untagged_paths.txt")
+NEW_DEC_DIR = os.path.join(TAGGED_OUT, "s7-untagged-decoded/")
+NEW_DEC_SPLIT_DIR = os.path.join(TAGGED_OUT, "s8-untagged-decoded-split/")
+NEW_FEAT_DIR = os.path.join(TAGGED_OUT, "s9-untagged-features/")
+RESULTS_DIR = os.path.join(TAGGED_OUT, "s10-results/")
+
+IDLE_PATHS = os.path.join(IDLE_OUT, "s1_idle_paths.txt")
+DEC_IDLE_DIR = os.path.join(IDLE_OUT, "s2-idle-decoded/")
+FEAT_IDLE_DIR = os.path.join(IDLE_OUT, "s3-idle-features/")
+MODEL_IDLE_DIR = os.path.join(IDLE_OUT, "s4i-models/")
 
 #basics
 RED = "\033[31;1m"
@@ -57,7 +61,8 @@ INVAL = BEG + "%s \"%s\" is not a %s." + END
 WRONG_EXT = BEG + "%s must be a %s file. Received \"%s\"" + END
 
 #main.py errors
-NO_TAGGED_DIR = BEG + "Tagged pcap input directory (-i) required." + END
+NO_IN_DIR = BEG + "Tagged pcap input directory (-i) or idle directory (-l) required." + END
+NO_TAGGED_DIR = BEG + "Tagged pcap input directory (-i) required when -u option is used." + END
 NON_POS = BEG + "The number of processes must be a positive integer. Received \"%s\"." + END
 SCRIPT_FAIL = BEG + "Something went wrong with \"%s\". Exit status \"%d\".\n"\
               "    Please make sure you have properly set up your environment and that all" \
@@ -78,7 +83,7 @@ MISSING_MOD = BEG + "The %s for %s does not exist at \"%s\". Skipping device..."
 
 #main.py usage
 MAIN_USAGE = """
-Usage: python3 {prog_name} -i TAGGED_DIR -l IDLE_DIR[OPTION]...
+Usage: python3 {prog_name} (-i TAGGED_DIR [-u UNTAGGED_DIR] | -l IDLE_DIR) [OPTION]...
 
 Predicts the device activity of pcap files using machine learning models
 that is created using several input pcap files with known device activity.
@@ -89,17 +94,20 @@ algorithms available to generate the models.
 
 Example: python3 {prog_name} -i traffic/ -u sample-untagged -n -p 4
 
-Required arguments:
+At least one required:
   -i TAGGED_DIR   path to the directory containing pcap files with known device
                     activity to generate the models; see the traffic/ section
                     of model_details.md for the structure of this directory
+  
+  
   -l IDLE_DIR     path to the directory containing pcap files with idle device
                     activity to generate the idle activity detection models.
 
 Optional arguments:
   -u UNTAGGED_DIR path to the directory containing pcap files with unknown
                     device activity for prediction; see the traffic/ section
-                    of model_details.md for the structure of this directory
+                    of model_details.md for the structure of this directory;
+                    the -i option must be used
   -d              generate a model using the DBSCAN algorithm
   -k              generate a model using the k-means algorithm
   -n              generate a model using the k-nearest neighbors (KNN) algorithm
@@ -257,21 +265,21 @@ For more information, see the README or model_details.md.""".format(prog_name=PA
 
 #predict.py
 PREDICT_USAGE = """
-Usage: python3 {prog_name} in_features_dir in_models_dir out_results_dir out_features_dir(labelled)
+Usage: python3 {prog_name} in_train_feat_dir in_untagged_feat_dir in_models_dir out_results_dir
 
 Uses machine learning models to predict device activity of unknown traffic.
 
-Example: python3 {prog_name} features/us/ models/us/ results/ labelled_features/ 
+Example: python3 {prog_name} features/us/train features/us/untagged models/us/ results/
 
 Arguments:
-  in_features_dir: path to a directory containing CSV files of statistically-analyzed
-                     untagged pcap files
-  in_models_dir:   path to a directory containing machine-learning models to predict
-                     device activity
-  out_results_dir: path to the directory to place prediction results; directory will
-                     be generated if it currently does not exist
-  out_features_dir(labelled): path to a directory containing CSV files of statistically-analyzed
-                              tagged pcap files
+  in_train_feat_dir:    path to a directory containing CSV files of statistically-analyzed
+                          tagged training pcap files
+  in_untagged_feat_dir: path to a directory containing CSV files of statistically-analyzed
+                          untagged pcap files
+  in_models_dir:        path to a directory containing machine-learning models to predict
+                          device activity
+  out_results_dir:      path to the directory to place prediction results; directory will
+                          be generated if it currently does not exist
 
 For more information, see the README or model_details.md.""".format(prog_name=PATH)
 

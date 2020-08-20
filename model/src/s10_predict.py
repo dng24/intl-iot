@@ -15,6 +15,9 @@ warnings.simplefilter("ignore", category=DeprecationWarning)
 style.use('ggplot')
 np.random.seed(42)
 
+#In: train_features_dir untagged_features_dir tagged_models_dir [idle_models_dir] out_results_dir
+#Out: Directory containing predictions
+
 #is_error is either 0 or 1
 def print_usage(is_error):
     print(c.PREDICT_USAGE, file=sys.stderr) if is_error else print(c.PREICT_USAGE)
@@ -161,13 +164,17 @@ def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file,
     action_classification_model_dict = pickle.load(open(base_model_file, 'rb'))
     ss = action_classification_model_dict['standard_scaler']
     anomaly_model = pickle.load(open(anomaly_model_file, 'rb'))
-    idle_model = pickle.load(open(idle_model_file, 'rb'))
+    if not idle_model_file is None:
+        idle_model = pickle.load(open(idle_model_file, 'rb'))
+
     normal_data, anomalous_data = filter_anomaly(ss, anomaly_data, anomaly_model, dev_result_dir)
     # TODO: The normal data is further classified into idle vs the rest. The rest can be passed through an unsup model.
     #normal_data['predictions'] = di['normal']
     hosts_normal = [hosts[i] for i in normal_data.index]
     self_labelled_data = normal_data
-    self_labelled_data['predictions'] = unsupervised_classification(normal_data,device,hosts_normal,dev_result_dir)
+    afaf = unsupervised_classification(normal_data,device,hosts_normal,dev_result_dir)
+    self_labelled_data['predictions'] = afaf #unsupervised_classification(normal_data,device,hosts_normal,dev_result_dir)
+
 
     if anomalous_data.shape[0] == 0:
         print("No Labelled Anomalous data.")
@@ -192,6 +199,32 @@ def run_process(features_file,dev_result_dir,base_model_file,anomaly_model_file,
         original_data['state'] = y_predict
         retrain_model(original_data,model_dir,trained_features_file)
 
+
+#Check dir to make sure it exists and has read/execute permission
+def check_dir(dir_description, dir_path):
+    errors = False
+    if not os.path.isdir(dir_path):
+        errors = True
+        print(c.INVAL % (dir_description, dir_path, "directory"), file=sys.stderr)
+    else:
+        if not os.access(dir_path, os.R_OK):
+            errors = True
+            print(c.NO_PERM % (dir_description.lower(), dir_path, "read"), file=sys.stderr)
+        if not os.access(dir_path, os.X_OK):
+            errors = True
+            print(c.NO_PERM % (dir_description.lower(), dir_path, "execute"), file=sys.stderr)
+    return errors
+
+
+#Check that a file exists
+def check_file(description, device, filepath):
+    if not os.path.isfile(filepath):
+        print(c.MISSING_MOD % (description, device, filepath), file=sys.stderr)
+        return True
+    else:
+        return False
+
+
 def main():
     global di, reverse_di, labels
 
@@ -201,41 +234,32 @@ def main():
 
     #error checking
     #check for 3 args
-    if len(sys.argv) != 5:
+    if len(sys.argv) != 5 and len(sys.argv) != 6:
         print(c.WRONG_NUM_ARGS % (4, (len(sys.argv) - 1)), file=sys.stderr)
         print_usage(1)
 
-    features_dir = sys.argv[1]
-    model_dir = sys.argv[2]
-    results_dir = sys.argv[3]
-    train_features_dir = sys.argv[4]
+    has_idle = len(sys.argv) == 6
+    train_features_dir = sys.argv[1]
+    untagged_features_dir = sys.argv[2]
+    model_dir = sys.argv[3]
+    if has_idle:
+        idle_dir = sys.argv[4]
+        results_dir = sys.argv[5]
+    else:
+        results_dir = sys.argv[4]
+
     
-    #check features dir
-    errors = False
-    if not os.path.isdir(features_dir):
-        errors = True
-        print(c.INVAL % ("Features directory", features_dir, "directory"), file=sys.stderr)
-    else:
-        if not os.access(features_dir, os.R_OK):
-            errors = True
-            print(c.NO_PERM % ("features directory", features_dir, "read"), file=sys.stderr)
-        if not os.access(features_dir, os.X_OK):
-            errors = True
-            print(c.NO_PERM % ("features directory", features_dir, "execute"), file=sys.stderr)
+    #check training features dir
+    errors = check_dir("Training features directory", train_features_dir)
+    #check untagged features dir
+    errors = check_dir("Untagged features directory", untagged_features_dir)
+    #check tagged model dir
+    errors = check_dir("Tagged model directory", model_dir)
+    if has_idle:
+        #check idle model dir
+        errors = check_dir("Idle model directory", idle_dir)
 
-    #check model dir
-    if not os.path.isdir(model_dir):
-        errors = True
-        print(c.INVAL % ("Model directory", model_dir, "directory"), file=sys.stderr)
-    else:
-        if not os.access(model_dir, os.R_OK):
-            errors = True
-            print(c.NO_PERM % ("model directory", model_dir, "read"), file=sys.stderr)
-        if not os.access(model_dir, os.X_OK):
-            errors = True
-            print(c.NO_PERM % ("model directory", model_dir, "execute"), file=sys.stderr)
-
-    #check results_dir
+    #check results_dir if it exists
     if os.path.isdir(results_dir):
         if not os.access(results_dir, os.W_OK):
             errors = True
@@ -244,64 +268,48 @@ def main():
             errors = True
             print(c.NO_PERM % ("results directory", results_dir, "execute"), file=sys.stderr)
 
-    # check results_dir
-    if os.path.isdir(train_features_dir):
-        if not os.access(train_features_dir, os.W_OK):
-            errors = True
-            print(c.NO_PERM % ("Trained Features directory", results_dir, "write"), file=sys.stderr)
-        if not os.access(results_dir, os.X_OK):
-            errors = True
-            print(c.NO_PERM % ("Trained Features directory", results_dir, "execute"), file=sys.stderr)
-
     if errors:
         print_usage(1)
     #end error checking
 
-    for path in os.listdir(features_dir):
+    for path in os.listdir(untagged_features_dir):
         # base_model_name = ''
         # anomaly_model_file = ''
         # device_label = ''
         if path.endswith(".csv"):
-            errors = False
-            features_file = features_dir + '/' + path
+            features_file = untagged_features_dir + '/' + path
             device = path.replace('.csv','')
             base_model_file = os.path.join(model_dir, "knn", device + "knn.model")
-            if not os.path.isfile(base_model_file):
-                print(c.MISSING_MOD % ("model", device, base_model_file), file=sys.stderr)
-                errors = True
+            errors = check_file("model", device, base_model_file)
 
             device_label = os.path.join(model_dir, "knn", device + ".label.txt")
-            if not os.path.isfile(device_label):
-                print(c.MISSING_MOD % ("labels", device, device_label), file=sys.stderr)
-                errors = True
+            errors = check_file("labels", device, device_label) or errors
 
             anomaly_model_file = os.path.join(model_dir, "anomaly_model",
                                               "multivariate_model_" + device + ".pkl")
-
-            idle_model_file = os.path.join(model_dir, "idle_model",
-                                              "multivariate_model_" + device + "_idle.pkl")
-
-            if not os.path.isfile(anomaly_model_file):
-                print(c.MISSING_MOD % ("anomaly model", device, anomaly_model_file), file=sys.stderr)
-                errors = True
-
-            if not os.path.isfile(idle_model_file):
-                print(c.MISSING_MOD % ("idle model", device, idle_model_file), file=sys.stderr)
-                errors = True
+            errors = check_file("anomaly model", device, anomaly_model_file) or errors
+            
+            if has_idle:
+                idle_model_file = os.path.join(idle_dir,
+                                               "multivariate_model_" + device + "_idle.pkl")
+                errors = check_file("idle model", device, idle_model_file) or errors
+            else:
+                idle_model_file = None
+            
             for feat_path in os.listdir(train_features_dir):
                 if feat_path == f'{device}.csv':
                     trained_features_file = f'{train_features_dir}/{feat_path}'
             print(trained_features_file)
 
             if errors:
-                break
+                continue
 
             labels = label(device_label)
             di,reverse_di = dictionary_create(labels)
             dev_result_dir = os.path.join(results_dir, device + '_results/')
             print(f"Running process for {device}")
-            run_process(features_file, dev_result_dir,base_model_file,anomaly_model_file,idle_model_file,
-                        model_dir,trained_features_file)
+            run_process(features_file, dev_result_dir, base_model_file, anomaly_model_file,
+                        idle_model_file, model_dir,trained_features_file)
             print("Results for %s written to \"%s\"" % (device, dev_result_dir))
 
 

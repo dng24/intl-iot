@@ -55,11 +55,11 @@ def unsupervised_classification(data,device,hosts,dev_result_dir):
     hosts_column = pc_filtered.set_index('id').hosts.str.split(';', expand=True).stack().reset_index(1,
                                                                                                      drop=True).reset_index(
         name='hosts_split')
+
     hosts_column = hosts_column.set_index('id').hosts_split.str.split(',', expand=True).stack().reset_index(1,
                                                                                                             drop=True).reset_index(
         name='hosts_split')
-    hosts_column.drop(hosts_column.index[hosts_column['hosts_split'].str.contains('192.168')], inplace=True)
-
+    #hosts_column.drop(hosts_column.index[hosts_column['hosts_split'].str.contains('192.168')], inplace=True)
     merged = pd.merge(hosts_column, pc_filtered, on='id', how='left')
     pivoted = merged[['id', 'hosts_split']].pivot_table(index=['id'], columns=['hosts_split'], aggfunc=[len],
                                                         fill_value=0)
@@ -67,8 +67,9 @@ def unsupervised_classification(data,device,hosts,dev_result_dir):
     one_hot_encoded = pivoted['len'].reset_index()
     new_data = pd.merge(one_hot_encoded, pc_filtered, on='id', how='left')
     new_data = new_data.drop(['hosts'], axis=1)
+    new_data = new_data[new_data.columns.drop(list(new_data.filter(regex='192.168')))]
     ############### GMM Clustering ########################
-    n_components = np.arange(1, 21)
+    n_components = np.arange(1, min([21, len(new_data.index)]))
     models = [GaussianMixture(n, covariance_type='full', random_state=0).fit(new_data)
               for n in n_components]
     min_arr_bic = [m.bic(new_data) for m in models]
@@ -104,5 +105,4 @@ def unsupervised_classification(data,device,hosts,dev_result_dir):
     # fowlkes_mallows = metrics.fowlkes_mallows_score(labels_pred, labels_true)
     predictions = [f'{iter_val}_cluster' + str(i) for i in new_data['clusters']]
     return predictions
-
 

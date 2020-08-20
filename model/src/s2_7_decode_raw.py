@@ -53,7 +53,6 @@ def extract_pcap(in_pcap, out_txt):
                     or (ip_spl[0] == "192" and ip_spl[1] == "168")):
                 host = ip_host[ip_dst] = ""
             else: #use whois if not local address
-                print(ip_dst)
                 try:
                     w = whois.whois(ip_dst)
                     if w.domain_name is None:
