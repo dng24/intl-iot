@@ -109,14 +109,14 @@ def retrain_model(data, model_dir,trained_features_file):
     Train through the list of interested ML algorithms
     """
     ret_results = []
-    root_output = os.path.join(model_dir, 'retrained')
-    print(f'{model_dir}/retrained')
-    if not os.path.exists(f'{model_dir}/retrained'):
-        os.system('mkdir -pv %s' % f'{model_dir}/retrained')
+    root_output = os.path.join(model_dir, 'output')
+    print(f'{model_dir}/knn')
+    if not os.path.exists(f'{model_dir}/knn'):
+        os.system('mkdir -pv %s' % f'{model_dir}/knn')
 
-    model_file = os.path.join(model_dir, "retrained", device + "knn.model")
-    label_file = os.path.join(model_dir, "retrained", device + "label.txt")
-    single_outfile = os.path.join(model_dir, "retrained", device + "result.txt")
+    model_file = os.path.join(model_dir, "knn", device + "knn.model")
+    label_file = os.path.join(model_dir, "knn", device + ".label.txt")
+    single_outfile = os.path.join(model_dir, "knn", device + "result.csv")
     output_file = os.path.join(root_output, "result_" + 'knn' + ".txt")
 
     _acc_score = -1
@@ -149,7 +149,7 @@ def retrain_model(data, model_dir,trained_features_file):
     """
     Plot tSNE graph
     """
-    root_model = os.path.join(model_dir, "retrained")
+    root_model = os.path.join(model_dir, "knn")
     figfile = '%s/%s-%s.png' % (root_model,'knn', device)
     pp = 30  # perplexity
     if num_data_points > 200:
