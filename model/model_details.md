@@ -23,13 +23,30 @@ Examples:
 
 ### Machine Learning
 
-During evaluation, we use following algorithms:
-- RF:  [RandomForestClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html) (supervised)
-- KNN: [KNeighborsClassifier](https://scikit-learn.org/stable/modules/generated/sklearn.neighbors.KNeighborsClassifier.html) (supervised)
-- *k*-means: [MiniBatchKMeans](https://scikit-learn.org/stable/modules/generated/sklearn.cluster.MiniBatchKMeans.html) (unsupervised)
-- DBSCAN: [DBSCAN](https://scikit-learn.org/stable/modules/generated/sklearn.cluster.DBSCAN.html) (unsupervised)
+Step 1: Building a Supervised model
 
-For the purpose of IMC submission, we do not consider unsupervised approaches (i.e. *k*-means, DBSCAN).
+For our supervised learning pipeline we are using the labeled data. 
+We first split our data into a training and testing set. (70-30 split)
+To reduce the feature space and feature correlation, we performed a principal component analysis on the numeric variables of our feature set. 
+Our prediction, in this case, is the “State” which depicts the action performed by the device. The State is One Hot Encoded and converted to a numerical form to feed into the model. If there are 9 different states the output will take the form(0-8)
+The K-Nearest-Neighbors algorithm is then fit onto our training data and the number of clusters we specify as an input is the same as the number of States that are present in the data for the device. 
+We then perform an evaluation of the predictions using an accuracy score(F1).
+
+
+
+Step 2: Building an Anomaly Detection Model  
+The Anomaly Detection Model is built on a Gaussian Distribution Model. The data we are looking to segregate here is our activations of the device. Thus, our model is trained to see our activations as normal behavior and so it is able to flag activations it has seen before as one category and all the other data points as another category. 
+The data that has been flagged as known activations are then run through our supervised model to be classified into their labels of activations. The other set of unknown activations/idle points are sent through to the unsupervised modeling
+for clustering.
+
+Step 3: Unsupervised Learning
+
+The unsupervised model is used to cluster data that the anomaly model believes has not been seen before or does not belong to one of the known activations of the device. This model is looking to cluster each of these data points into separate clusters and add them to the ‘known’ list so that the next time this model encounters a similar data point it gets classified as something that has been seen before. 
+The feature engineering of this model is similar to that of the supervised technique where the dimensions of the numerical variables have been reduced using PCA. The extra feature added here is the one hot encoded hostnames. The hostnames are a list of domains visited by the devices during that particular data point. 
+We then run a GMM model on the data iterating through different values of clusters. The best number of clusters is determined by the lowest BIC achieved for the model given the cluster number. 
+Using the number of clusters required we then fit a KMeans model on the data to classify the data into clusters. (A random name is assigned to each cluster)
+This final data split by cluster names then are merged with the log from the supervised file to form our new output. 
+
 
 ### Variables in sklearn:
 
@@ -68,7 +85,7 @@ The table below lists the steps needed to complete the model pipeline.
 | 7    | Prediction    | s2_7_decode_raw.py   | Decode untagged pcaps                            | Untagged pcaps text file                 | Decoded untagged pcaps directory      |
 | 8    | Prediction    | s8_slide_split.py    | Split decoded untagged pcaps by timestamp        | Decoded untagged pcaps directory         | Split decoded pcaps directory         |
 | 9    | Prediction    | s3_9_get_features.py | Statistically analyze split decoded pcaps        | Split decoded pcaps directory            | Untagged features directory           |
-| 10   | Prediction    | s10_predict.py       | Predict activity using base and anomaly models   | Untagged features and models directories | Results directory                     |
+| 10   | Prediction    | s10_predict.py       | Predict activity using base and anomaly models   | Untagged features and models directories | Results directory, retrained model    |
 
 ## Scripts
 
@@ -122,6 +139,7 @@ This script places all output in `OUT_DIR`:
 - `s8-untagged-decoded-split/` - The directory containing the decoded untagged pcap files split into different files by timestamp.
 - `s9-untagged-features/` - The directory containing the statistically-analyzed untagged files.
 - `s10-results/` - The directory containing the device activity prediction results of the untagged files.
+
 
 Steps 6-10 are run only if `-u` is specified.
 
@@ -372,6 +390,11 @@ The script takes the features in `in_features_dir/{device}.csv` and uses the mod
 - `prediction` - the activity prediction of the device between `start_time` and `end_time`
 - `start_time` - the start time of the packets in the specific prediction
 - `tagged` - the actual activity of the device in the specified time frame
+
+###Internally called scripts 
+
+- `unsupervised_classification.py` - Called by s10 for unsupervised clustering of data points. 
+- `retrain.py` - Retrained supervised model based on new classification of data points and new clusters. 
 
 ## Non-scripts
 
