@@ -100,7 +100,7 @@ At least one required:
                     of model_details.md for the structure of this directory
   
   -l IDLE_DIR     path to the directory containing pcap files with idle device
-                    activity to generate the idle activity detection models.
+                    activity to generate the idle activity detection models
 
 Optional arguments:
   -u UNTAGGED_DIR path to the directory containing pcap files with unknown
@@ -122,21 +122,6 @@ Optional arguments:
 Note: If no model is specified to be generated, all five models will be generated.
 
 For more information, see the README and model_details.md.""".format(prog_name=PATH)
-
-#split_data.py usage
-IDLE_DAT_USAGE = """
-Usage: python3 {prog_name} in_pcap_dir out_idle_file
-
-Recursively splits the pcaps in a directory into a training set and a testing set.
-
-Example: python3 {prog_name} traffic/ s0_idle_paths.txt
-
-Arguments:
-  in_pcap_dir:    path to a directory containing pcap files
-  out_idle_file: path to a text file to write the filenames of idle files;
-                    file will be generate if it does not already exist
-
-For more information, see the README or model_details.md""".format(prog_name=PATH)
 
 #split_data.py usage
 SPLIT_DAT_USAGE = """
@@ -196,7 +181,7 @@ For more information, see the README or model_details.md.""".format(prog_name=PA
 EVAL_MOD_USAGE = """
 Usage: python3 {prog_name} -i IN_FEATURES_DIR -o OUT_MODELS_DIR [-dknrs]
 
-Trains anaylzed pcap files and produces one or more models using different algorithms
+Trains analyzed pcap files and produces one or more models using different algorithms
 that can predict device activity.
 
 Example: python3 {prog_name} -i features/us/ -o models/us/ -kn

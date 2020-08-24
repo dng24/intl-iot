@@ -23,30 +23,36 @@ Examples:
 
 ### Machine Learning
 
-Step 1: Building a Supervised model
+#### Step 1: Building a Supervised model
 
 For our supervised learning pipeline we are using the labeled data. 
-We first split our data into a training and testing set. (70-30 split)
+
+We first split our data into a training and testing set (70-30 split).
+
 To reduce the feature space and feature correlation, we performed a principal component analysis on the numeric variables of our feature set. 
-Our prediction, in this case, is the “State” which depicts the action performed by the device. The State is One Hot Encoded and converted to a numerical form to feed into the model. If there are 9 different states the output will take the form(0-8)
-The K-Nearest-Neighbors algorithm is then fit onto our training data and the number of clusters we specify as an input is the same as the number of States that are present in the data for the device. 
-We then perform an evaluation of the predictions using an accuracy score(F1).
 
+Our prediction, in this case, is the “State” which depicts the action performed by the device. The State is One Hot Encoded and converted to a numerical form to feed into the model. If there are 9 different states the output will take the form (0-8).
 
+The *k*-nearest neighbors (KNN) algorithm is then fit onto our training data and the number of clusters we specify as an input is the same as the number of States that are present in the data for the device. 
 
-Step 2: Building an Anomaly Detection Model  
+We then perform an evaluation of the predictions using an accuracy score (F1).
+
+#### Step 2: Building an Anomaly Detection Model  
+
 The Anomaly Detection Model is built on a Gaussian Distribution Model. The data we are looking to segregate here is our activations of the device. Thus, our model is trained to see our activations as normal behavior and so it is able to flag activations it has seen before as one category and all the other data points as another category. 
-The data that has been flagged as known activations are then run through our supervised model to be classified into their labels of activations. The other set of unknown activations/idle points are sent through to the unsupervised modeling
-for clustering.
 
-Step 3: Unsupervised Learning
+The data that has been flagged as known activations are then run through our supervised model to be classified into their labels of activations. The other set of unknown activations/idle points are sent through to the unsupervised modeling for clustering.
+
+#### Step 3: Unsupervised Learning
 
 The unsupervised model is used to cluster data that the anomaly model believes has not been seen before or does not belong to one of the known activations of the device. This model is looking to cluster each of these data points into separate clusters and add them to the ‘known’ list so that the next time this model encounters a similar data point it gets classified as something that has been seen before. 
-The feature engineering of this model is similar to that of the supervised technique where the dimensions of the numerical variables have been reduced using PCA. The extra feature added here is the one hot encoded hostnames. The hostnames are a list of domains visited by the devices during that particular data point. 
-We then run a GMM model on the data iterating through different values of clusters. The best number of clusters is determined by the lowest BIC achieved for the model given the cluster number. 
-Using the number of clusters required we then fit a KMeans model on the data to classify the data into clusters. (A random name is assigned to each cluster)
-This final data split by cluster names then are merged with the log from the supervised file to form our new output. 
 
+The feature engineering of this model is similar to that of the supervised technique where the dimensions of the numerical variables have been reduced using PCA. The extra feature added here is the one hot encoded host names. The host names are a list of domains visited by the devices during that particular data point. 
+
+We then run a GMM model on the data iterating through different values of clusters. The best number of clusters is determined by the lowest BIC achieved for the model given the cluster number. 
+Using the number of clusters required we then fit a *k*-means model on the data to classify the data into clusters (a random name is assigned to each cluster).
+
+This final data split by cluster names then are merged with the log from the supervised file to form our new output. 
 
 ### Variables in sklearn:
 
@@ -56,11 +62,11 @@ N samples of M features of L classes
 - X_train: default 70% of N samples (shuffled)
 - X_test: default 30% of N samples (shuffled)
 - y_train: original encoded values, e.g. "watch_ios_on"
-    - y_train_bin: onehot encoded, e.g. [0, 1, 0, 0] as watch_ios_on is the second in the .classes_
+    - y_train_bin: one hot encoded, e.g. [0, 1, 0, 0] as watch_ios_on is the second in the .classes_
 - y_test: original encoded values
-    - y_test_bin: onehot encoded
+    - y_test_bin: one hot encoded
     - y_test_bin_1d: encoded values
-    - y_predicted: onehot encoded prediction of X_test
+    - y_predicted: one hot encoded prediction of X_test
     - y_predicted_1d: encoded values
     - y_predicted_label: original values
 - _acc_score: Trained with X_train,y_train; eval with X_test, y_test; refer to [accuracy_score](https://scikit-learn.org/stable/modules/generated/sklearn.metrics.accuracy_score.html)
@@ -70,22 +76,32 @@ N samples of M features of L classes
 
 ## Steps
 
-The table below lists the steps needed to complete the model pipeline.
+The table below lists the steps needed to complete the tagged model pipeline. Steps 6-10 are optional.
 
-| Step | Phase         | Script               | Description                                      | Inputs                                   | Outputs                               |
-| ---- | ------------- | -------------------- | ------------------------------------------------ | ---------------------------------------- | ------------------------------------- |
-| 1    | Preprocessing | s1_split_data.py     | Make training and testing sets from tagged pcaps | Tagged pcap directory                    | Training and testing pcaps text files |
-| 2.1  | Preprocessing | s2_7_decode_raw.py   | Decode tagged training pcaps                     | Training pcaps text file                 | Decoded training pcaps directory      |
-| 2.2  | Preprocessing | s2_7_decode_raw.py   | Decode tagged testing pcaps                      | Testing pcaps text file                  | Decoded testing pcaps directory       |
-| 3.1  | Preprocessing | s3_9_get_features.py | Statistically analyze decoded training pcaps     | Decoded training pcaps directory         | Training features directory           |
-| 3.2  | Preprocessing | s3_9_get_features.py | Statistically analyze decoded testing pcaps      | Decoded testing pcaps directory          | Testing features directory            |
-| 4    | Modeling      | s4_eval_model.py     | Generate base model                              | Training features directory              | Models directory - base model         |
-| 5    | Modeling      | s5_find_anomalies.py | Generate anomaly model                           | Training features directory              | Models directory - anomaly model      |
-| 6    | Prediction    | `find` command       | Make text file from untagged pcaps               | Untagged pcap directory                  | Untagged pcaps text file              |
-| 7    | Prediction    | s2_7_decode_raw.py   | Decode untagged pcaps                            | Untagged pcaps text file                 | Decoded untagged pcaps directory      |
-| 8    | Prediction    | s8_slide_split.py    | Split decoded untagged pcaps by timestamp        | Decoded untagged pcaps directory         | Split decoded pcaps directory         |
-| 9    | Prediction    | s3_9_get_features.py | Statistically analyze split decoded pcaps        | Split decoded pcaps directory            | Untagged features directory           |
-| 10   | Prediction    | s10_predict.py       | Predict activity using base and anomaly models   | Untagged features and models directories | Results directory, retrained model    |
+| Step | Phase         | Script               | Description                                      | Inputs                                              | Outputs                               |
+| ---- | ------------- | -------------------- | ------------------------------------------------ | --------------------------------------------------- | ------------------------------------- |
+| 1    | Preprocessing | s1_split_data.py     | Make training and testing sets from tagged pcaps | Tagged pcap directory                               | Training and testing pcaps text files |
+| 2.1  | Preprocessing | s2_7_decode_raw.py   | Decode tagged training pcaps                     | Training pcaps text file                            | Decoded training pcaps directory      |
+| 2.2  | Preprocessing | s2_7_decode_raw.py   | Decode tagged testing pcaps                      | Testing pcaps text file                             | Decoded testing pcaps directory       |
+| 3.1  | Preprocessing | s3_9_get_features.py | Statistically analyze decoded training pcaps     | Decoded training pcaps directory                    | Training features directory           |
+| 3.2  | Preprocessing | s3_9_get_features.py | Statistically analyze decoded testing pcaps      | Decoded testing pcaps directory                     | Testing features directory            |
+| 4    | Modeling      | s4_eval_model.py     | Generate base model                              | Training features directory                         | Models directory - base model         |
+| 5    | Modeling      | s5_find_anomalies.py | Generate anomaly model                           | Training features directory                         | Models directory - anomaly model      |
+| 6    | Prediction    | `find` command       | Make text file from untagged pcaps               | Untagged pcap directory                             | Untagged pcaps text file              |
+| 7    | Prediction    | s2_7_decode_raw.py   | Decode untagged pcaps                            | Untagged pcaps text file                            | Decoded untagged pcaps directory      |
+| 8    | Prediction    | s8_slide_split.py    | Split decoded untagged pcaps by timestamp        | Decoded untagged pcaps directory                    | Split decoded pcaps directory         |
+| 9    | Prediction    | s3_9_get_features.py | Statistically analyze split decoded pcaps        | Split decoded pcaps directory                       | Untagged features directory           |
+| 10   | Prediction    | s10_predict.py       | Predict activity using base and anomaly models   | Untagged & training features and models directories | Results directory, retrained model    |
+
+In addition, there is an idle pipeline where idle data is used instead of tagged data.
+
+| Step | Phase         | Script               | Description                           | Inputs                       | Outputs                      |
+| ---- | ------------- | -------------------- | ------------------------------------- | ---------------------------- | ---------------------------- |
+| 1    | Preprocessing | s1_split_data.py     | List idle pcap filenames in text file | Idle pcap directory          | Idle pcaps text file         |
+| 2    | Preprocessing | s2_7_decode_raw.py   | Decode idle pcaps                     | Idle pcaps text file         | Decoded idle pcaps directory |
+| 3    | Preprocessing | s3_9_get_features.py | Statistically analyze idle pcaps      | Decoded idle pcaps directory | Idle features directory      |
+| 4    | Modeling      | s4i_find_idle.py     | Generate idle model                   | Idle features directory      | Idle model directory         |
+| 5    | Prediction    | s10_predict.py       | Make predictions (unimplemented)      | ---                          | ---                          |
 
 ## Scripts
 
@@ -101,9 +117,15 @@ Example: `python3 main.py -i traffic/us/ -u sample-untagged/ -n -o output/ -p 4`
 
 #### Input
 
-`-i TAGGED_DIR` - The path to the directory containing pcap files with known device activity to generate the machine learning models. See the [traffic/](#traffic) section below for the required structure of this directory. This option is required.
+At least one required:
 
-`-u UNTAGGED_DIR` - The path to the directory containing pcap files with unknown device activity for prediction. See the [traffic/](#traffic) section below for the required structure of this directory.
+`-i TAGGED_DIR` - The path to the directory containing pcap files with known device activity to generate the machine learning models. See the [traffic/](#traffic) section below for the required structure of this directory.
+
+`-l IDLE_DIR` - The path to the directory containing pcap files with idle device activity to generate the idle activity detection models. See the [traffic/](#traffic) section below for the required structure of this directory.
+
+Optional arguments:
+
+`-u UNTAGGED_DIR` - The path to the directory containing pcap files with unknown device activity for prediction. See the [traffic/](#traffic) section below for the required structure of this directory. **The `-i` option must be specified to use this option.**
 
 `-d` - Generate a model using the DBSCAN algorithm.
 
@@ -125,7 +147,7 @@ Note: If no models are specified to be generated, all five models will be create
 
 #### Output
 
-This script places all output in `OUT_DIR`:
+This script places all output in `OUT_DIR`. The Tagged Pipeline (-i and -u options) results are placed in `OUT_DIR/tagged`:
 
 - `s1_test_paths.txt` - The paths to pcap files used to test the trained models.
 - `s1_train_paths.txt` - The paths to pcap files used to create the machine learning models.
@@ -140,18 +162,24 @@ This script places all output in `OUT_DIR`:
 - `s9-untagged-features/` - The directory containing the statistically-analyzed untagged files.
 - `s10-results/` - The directory containing the device activity prediction results of the untagged files.
 
-
 Steps 6-10 are run only if `-u` is specified.
+
+The Idle Pipeline (-l option) results are placed in `OUT_DIR/idle`:
+
+- `s1_idle_paths.txt` - The paths to pcap files of the idle data.
+- `s2-idle-decoded/` - The directory containing the decoded idle pcap files.
+- `s3-idle-features/` - The directory containing the statistically-analyzed idle files.
+- `s4i-models/` - The directory containing the model generated by the idle data.
 
 Information about the contents of each of these files and directories can be found below.
 
 ### src/s1_split_data.py
 
-This script is the first step of the model pipeline and the first step in the preprocessing phase. The script takes a directory of pcaps recursively and randomly splits the pcaps into a training set and a testing set.
+This script is the first step of the tagged pipeline and the first step in the preprocessing phase of the tagged pipeline. It is also the first step of the idle pipeline. The script takes a directory of pcaps recursively and randomly splits the pcaps into a training set and a testing set.
 
 #### Usage
 
-Usage: `python3 s1_split_data.py in_pcap_dir out_train_file out_test_file`
+Usage: `python3 s1_split_data.py in_pcap_dir out_train_file [out_test_file]`
 
 Example: `python3 s1_split_data.py traffic/ s1_train_paths.txt s1_test_paths.txt`
 
@@ -159,19 +187,23 @@ Example: `python3 s1_split_data.py traffic/ s1_train_paths.txt s1_test_paths.txt
 
 `in_pcap_dir` - The path to a directory containing input pcap files. Pcap files found in nested directories will also be processed.
 
-`out_train_file` - The path to a text (.txt) file to write the filenames of training files. This file will be generated if it does not already exist.
+`out_train_file` - The path to a text (.txt) file to write the filenames of training files. This file will be generated if it does not already exist. For the idle pipeline, use this argument as the output text file name.
 
-`out_test_file` - The path to a text (.txt) file to write the filenames of testing files. This file will be generated if it does not already exist.
+`out_test_file` - The path to a text (.txt) file to write the filenames of testing files. This file will be generated if it does not already exist. For the idle pipeline, do not include this argument.
 
 #### Output
 
-Two newline-delimited text files are produced, one of which contains file paths to pcaps for training models, while the other one contains file paths to pcaps for validating the models. Two-thirds of the pcap paths will be randomly selected and written to the training text file, while the rest will be written to the testing text file. If an existing text file is passed in, none of the paths in that text file will be written again to either text file.
+For the tagged pipeline, two newline-delimited text files are produced, one of which contains file paths to pcaps for training models, while the other one contains file paths to pcaps for validating the models. Two-thirds of the pcap paths will be randomly selected and written to the training text file, while the rest will be written to the testing text file.
+
+For the idle pipeline, one newline-delimited text file is produced, containing all the paths to the idle pcaps.
+
+If an existing text file is passed in, none of the paths in that text file will be written again to either text file.
 
 ### src/s2_7_decode_raw.py
 
 #### Usage
 
-This script is the second and seventh steps of the model pipeline and the second step in the preprocessing and prediction phases. The script decodes data in pcap files (whose filenames are listed in a text file) into human-readable text files using TShark.
+This script is the second and seventh steps of the tagged pipeline and the second step in the preprocessing and prediction phases of the tagged pipeline. It is also the second step of the idle pipeline. The script decodes data in pcap files (whose filenames are listed in a text file) into human-readable text files using TShark.
 
 Usage: `python3 s2_7_decode_raw.py exp_list out_imd_dir [num_proc]`
 
@@ -199,13 +231,13 @@ Output files contain the following columns:
 - `frame_len` - The number of bytes in the frame.
 - `ip_src` - The source IP address.
 - `ip_dst` - The destination IP address.
-- `host` - The hostname of the destination IP address, if one exists.
+- `host` - The host name of the destination IP address, if one exists.
 
 ### src/3_9_get_features.py
 
 #### Usage
 
-This script is the third and ninth steps of the model pipeline, the third step of the data preprocessing phase, and the fourth step of the prediction phase. The script uses the decoded pcap data output from `s2_7_decoded_raw.py` to perform data analysis to get features.
+This script is the third and ninth steps of the tagged pipeline, the third step of the data preprocessing phase, and the fourth step of the prediction phase of the tagged pipeline. It is also the third step of the idle pipeline. The script uses the decoded pcap data output from `s2_7_decoded_raw.py` to perform data analysis to get features.
 
 Usage: `python3 s3_9_get_features.py in_dec_dir out_features_dir [num_proc]`
 
@@ -260,11 +292,11 @@ An output CSV has the following columns (all regarding the random eighty percent
 - `anonymous_source_destination` - The number of frames which do not fit into `network_to`, `network_from`, `network_both`, `network_to_external`, or `network_local`.
 - `device` - The device which the data was recorded on.
 - `state` - The activity of the device when the data was recorded.
-- `host` - A semicolon-delimited list of hostnames of the destination IP addresses in the random sample. If a packet's destination IP address does not have a hostname, the destination IP address is used instead.
+- `host` - A semicolon-delimited list of host names of the destination IP addresses in the random sample. If a packet's destination IP address does not have a host name, the destination IP address is used instead.
 
 ### src/s4_eval_model.py
 
-This script is the fourth step of the model pipeline and the first step of the model development phase. The script trains analyzed pcap data and generates one or more models that can be used to predict device activity.
+This script is the fourth step of the tagged pipeline and the first step of the model development phase. The script trains analyzed pcap data and generates one or more models that can be used to predict device activity.
 
 #### Usage
 
@@ -309,9 +341,29 @@ The script will generate five files for each model specified:
  The second and third lines contain the predictions. 
 - `{OUT_MODELS_DIR}/output/result_{model}.txt` - This file is a copy of `{OUT_MODELS_DIR}/{model}/{device}.result.csv` without the second and third lines.
 
+### src/s4i_find_idle.py
+
+This script is the fourth step of the idle pipeline. It generates an idle model using the idle features generated in the previous step.
+
+#### Usage
+
+Usage: `python3 s4i_find_idle.py in_idle_features_dir out_idle_models_dir`
+
+Example: `python3 s4i_find_idle.py idle_features/us/ idle_models/us/`
+
+#### Input
+
+`in_idle_features_dir` - The path to a directory containing CSV files that have analyzed idle pcap data.
+
+`out_idle_models_dir` - The path to a directory to place generated idle models. This directory will be created if it does not exist.
+
+#### Output
+
+An idle model will be generated for each device at `{out_idle_models_dir}/multivariate_model_{device}_idle.pkl`.
+
 ### src/s5_find_anomalies.py
 
-This script is the fifth step of the model pipeline and the second step of the model development phase. The script finds anomalies in the models generated in `s4_eval_model.py`.
+This script is the fifth step of the tagged pipeline and the second step of the model development phase. The script finds anomalies in the models generated in `s4_eval_model.py`.
 
 #### Usage
 
@@ -331,7 +383,7 @@ This script produces an anomaly model to `{out_models_dir}/anomaly_model/multiva
 
 ### src/s8_slide_split.py
 
-This script is the eighth step of the model pipeline and the second step of the prediction phase. The script takes decoded pcap text files generated from `s2_7_decode_raw.py` and splits the contents of each file into separate files based on a time window and slide interval.
+This script is the eighth step of the tagged pipeline and the second step of the prediction phase. The script takes decoded pcap text files generated from `s2_7_decode_raw.py` and splits the contents of each file into separate files based on a time window and slide interval.
 
 #### Usage
 
@@ -345,7 +397,7 @@ Example: `python3 slide_split.py -i decoded/us/ -o decoded-split/us/ -t 20 -s 15
 
 `-o OUT_DIR` - The path to the directory to place the split decoded files. This directory will be created if it does not exist. This option is required.
 
-`-t TIME_WIN` - The maximum number of seconds of traffic that each split file will contain. Defualt is `30`.
+`-t TIME_WIN` - The maximum number of seconds of traffic that each split file will contain. Default is `30`.
 
 `-s SLIDE_INT` - The minimum number of seconds between the first timestamp of each file. Default is `5`.
 
@@ -361,19 +413,23 @@ Each text file is tab-delimited and contains the same columns as those described
 
 ### src/s10_predict.py
 
-This script is the tenth step of the model pipeline and the fifth step of the prediction phase. The script takes untagged pcap files and predicts their device activity using the base and anomaly models.
+This script is the tenth step of the tagged pipeline and the fifth step of the prediction phase of the tagged pipeline. It is also the fifth step of the idle pipeline, though unimplemented. The script takes untagged pcap files and predicts their device activity using the base and anomaly models.
 
 #### Usage
 
-Usage: `python3 s10_predict.py in_features_dir in_models_dir out_results_dir`
+Usage: `python3 s10_predict.py in_train_feat_dir in_untagged_feat_dir in_tagged_models_dir [in_idle_models_dir] out_results_dir`
 
-Example: `python3 predict.py features/us/ tagged-models/us/ results/`
+Example: `python3 predict.py features/us/train features/us/untagged tagged-models/us/ results/`
 
 #### Input
 
-`in_features_dir` - The path to a directory containing CSV files, generated by `s3_9_get_features.py`, of statistically-analyzed untagged pcap files.
+`in_train_feat_dir` - The path to a directory containing CSV files of statistically-analyzed tagged training pcap files.
 
-`model_dir` - The path to a directory containing machine-learning models to predict device activity, generated by `s4_eval_model.py`.
+`in_untagged_feats_dir` - The path to a directory containing CSV files, generated by `s3_9_get_features.py`, of statistically-analyzed untagged pcap files.
+
+`in_tagged_models_dir` - The path to a directory containing machine-learning models to predict device activity, generated by `s4_eval_model.py`.
+
+`in_idle_models_dir` - The path to a directory containing idle models. This argument is optional, and currently, it is not used by the script.
 
 `out_result_dir` - The path to a directory to place prediction results. This directory will be generated by the script if it currently does not exist.
 
@@ -391,10 +447,11 @@ The script takes the features in `in_features_dir/{device}.csv` and uses the mod
 - `start_time` - the start time of the packets in the specific prediction
 - `tagged` - the actual activity of the device in the specified time frame
 
-###Internally called scripts 
+### Internally Called Scripts 
 
-- `unsupervised_classification.py` - Called by s10 for unsupervised clustering of data points. 
-- `retrain.py` - Retrained supervised model based on new classification of data points and new clusters. 
+- `src/unsupervised_classification.py` - Called by `s10_predict.py` for unsupervised clustering of data points. 
+- `src/retrain.py` - Retrained supervised model based on new classification of data points and new clusters.
+- `src/Constants.py` - A list of constants that support the functionality of the pipelines.
 
 ## Non-scripts
 
@@ -433,5 +490,5 @@ An input directory with sample pcap files to generate machine learning models. T
 
 Each path should be on a new line.
 
-Note: To obtain the sample files in `traffic/`, please follow the directions in the Download Datasets section in [Getting_Started.md](../Getting_Started.md#download-datasets). If you have your own pcap files, you do not need to obatain these files.
+Note: To obtain the sample files in `traffic/`, please follow the directions in the Download Datasets section in [Getting_Started.md](../Getting_Started.md#download-datasets). If you have your own pcap files, you do not need to obtain these files.
 
