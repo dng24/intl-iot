@@ -2,7 +2,7 @@
 
 Content Analysis generates a machine learning model that can predict the device activity given the network traffic of that device.
 
-For step-by-step instructions on getting started, see the [Getting Started](../getting_started.md) document.
+For step-by-step instructions on getting started, see the [Getting Started](../Getting_Started.md) document.
 
 ## Setup
 
@@ -21,7 +21,7 @@ Definition of the device activity: tag name
 
 Usage: `python3 main.py (-i TAGGED_DIR [-u UNTAGGED_DIR] | -l IDLE_DIR) [OPTION]...`
 
-Example: `python3 main.py -i traffic/us/ -u sample-untagged/ -n -o output/ -p 4`
+Example: `python3 main.py -i traffic/us/ -u sample-untagged/ -dn -o output/ -p 4`
 
 ### Input
 
@@ -29,11 +29,11 @@ There are several options which one can choose from.
 
 #### Options
 
-`-i TAGGED_DIR` - The path to the directory containing pcap files with known device activity to generate the machine learning models. See the [traffic/](#traffic) section below for the required structure of this directory. Either this and or the -l option must be specified.
+`-i TAGGED_DIR` - The path to the directory containing pcap files with known device activity to generate the machine learning models. See the [traffic/](model_details.md#traffic) section in model_details.md for the required structure of this directory. **Either this and/or the `-l` option must be specified.**
 
-`-l IDLE_DIR` - The path to the directory containing idle pcap files to generate the idle activity detection models. Either this and or the -i option must be specified.
+`-l IDLE_DIR` - The path to the directory containing idle pcap files to generate the idle activity detection models. **Either this and/or the `-i` option must be specified.**
 
-`-u UNTAGGED_DIR` - The path to the directory containing pcap files with unknown device activity for prediction. See the [traffic/](#traffic) section below for the required structure of this directory. The -i option must be specified to use this option.
+`-u UNTAGGED_DIR` - The path to the directory containing pcap files with unknown device activity for prediction. See the [traffic/](model_details.md#traffic) section in model_details.md for the required structure of this directory. The `-i` option must be specified to use this option.
 
 `-d` - Generate a model using the DBSCAN algorithm.
 
@@ -57,10 +57,10 @@ There are several options which one can choose from.
 
 ### Output
 
-This script places all output in `OUT_DIR`. The Tagged Pipeline (-i and -u options) results are placed in `OUT_DIR/tagged`:
+This script places all output in `OUT_DIR`. The Tagged Pipeline (`-i` and `-u` options) results are placed in `OUT_DIR/tagged`:
 
-- `s1_test_paths.txt` - The paths to pcap files used to test the trained models.
 - `s1_train_paths.txt` - The paths to pcap files used to create the machine learning models.
+- `s1_test_paths.txt` - The paths to pcap files used to test the trained models.
 - `s2.1-train-decoded/` - The directory containing the decoded training pcap files.
 - `s2.2-test-decoded/` - The directory containing the decoded testing pcap files.
 - `s3.1-train-features/` - The directory containing the statistically-analyzed training files.
@@ -74,7 +74,7 @@ This script places all output in `OUT_DIR`. The Tagged Pipeline (-i and -u optio
 
 Steps 6-10 are run only if `-u` is specified.
 
-The Idle Pipeline (-l option) results are placed in `OUT_DIR/idle`:
+The Idle Pipeline (`-l` option) results are placed in `OUT_DIR/idle`:
 
 - `s1_idle_paths.txt` - The paths to pcap files of the idle data.
 - `s2-idle-decoded/` - The directory containing the decoded idle pcap files.
