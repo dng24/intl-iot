@@ -33,41 +33,7 @@ To obtain access to the dataset, please follow the instructions on the paper web
 
 ## Setup
 
-This version relies on Python 3.6 (tested on Python 3.6.9).
-
-It is strongly suggested that one uses the following virtual environment:
-```
-sudo apt-get install virtualenv
-sudo apt-get install libpcap-dev libpq-dev
-sudo apt-get install python3-dev
-sudo apt-get install python3.6-tk
-sudo apt-get install gcc
-sudo apt-get install tshark
-
-virtualenv -p python3.6 env
-source env/bin/activate
-```
-
-Once the environment is setup and running, install the following packages:
-```
-pip install numpy
-pip install scipy
-pip install pyshark
-pip install geoip2
-pip install matplotlib
-pip install dpkt
-pip install pycrypto
-pip install IPy
-pip install pcapy
-pip install scapy
-pip install Impacket
-pip install mysql-connector-python-rf
-pip install pandas
-pip install tldextract
-pip install python-whois
-pip install ipwhois
-pip install psutil
-```
+Please see the [General Setup](Getting_Started.md#general-setup) section of Getting_Started.md for instructions on how to setup.
 
 For more information about the pipelines and the contents of the code, see the READMEs for [destination analysis](destination/README.md), [encryption analysis](encryption/README.md), and [content analysis](model/README.md). Content analysis also has a page describing the machine learning models and contents of that directory in depth: [model/model_details.md](model/model_details.md).
 
