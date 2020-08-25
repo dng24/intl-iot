@@ -22,7 +22,7 @@ class Direction(object):
 RED = "\033[31;1m"
 END = "\033[0m"
 PATH = sys.argv[0]
-BEG = RED + PATH
+BEG = RED + PATH + ": Error: "
 
 USAGE_STM = """
 Usage: python3 {prog_name} -i IN_DIR {{-m MAC_ADDR | -d DEV}} [OPTION]... [-g PLOTS -p PROTOS [GRAPH_OPTION]...]
@@ -92,34 +92,34 @@ Notes:
 
 For more information, see the README.""".format(prog_name=PATH)
 
-MISSING = BEG + ": Error: The \"%s\" %s is missing." + END
+MISSING = BEG + "The \"%s\" %s is missing." + END
 DOWNLOAD_DB = RED + "Please go to the README for instructions to download the databases.\n"\
               "    If the databases are already downloaded, please make sure they are\n"\
               "    in the correct directory." + END
-NO_PERM = BEG + ": Error: The %s \"%s\" does not have %s permission." + END
+NO_PERM = BEG + "The %s \"%s\" does not have %s permission." + END
 PIE_STM = "***PiePlot currently does not function properly. Please choose a different plot.\n"\
           "   Currently available plots: BarHPlot, BarPlot, LinePlot, ScatterPlot, StackPlot"
 RP_STM = "***RipeCountry currently does not function properly. Please choose a different IP"\
          " mapping method.\n   Currently available methods: Country, Host, IP, TSharkHost"
 
-INVAL = BEG + ": Error: %s \"%s\" is not a %s." + END
-WRONG_EXT = BEG + ": Error: %s must be a %s file. Received \"%s\"" + END
+INVAL = BEG + "%s \"%s\" is not a %s." + END
+WRONG_EXT = BEG + "%s must be a %s file. Received \"%s\"" + END
 
-NO_IN_DIR = BEG + ": Error: Pcap input directory (-i) required." + END
-NO_MAC = BEG + ": Error: Either the MAC address (-m) or device name (-d) must be specified." + END
-INVAL_MAC = BEG + ": Error: Invalid MAC address \"%s\". Valid format xx:xx:xx:xx:xx:xx" + END
-NO_DEV = BEG + ": Error: The device \"%s\" does not exist in the device list \"%s\"." + END
-NON_POS = BEG + ": Error: The number of processes must be a positive integer. Received \"%s\"." + END
+NO_IN_DIR = BEG + "Pcap input directory (-i) required." + END
+NO_MAC = BEG + "Either the MAC address (-m) or device name (-d) must be specified." + END
+INVAL_MAC = BEG + "Invalid MAC address \"%s\". Valid format xx:xx:xx:xx:xx:xx" + END
+NO_DEV = BEG + "The device \"%s\" does not exist in the device list \"%s\"." + END
+NON_POS = BEG + "The number of processes must be a positive integer. Received \"%s\"." + END
 
-INVAL_PLT = BEG + ": Error: \"%s\" is not a valid plot type.\n    Must be either \"BarHPlot\","\
+INVAL_PLT = BEG + "\"%s\" is not a valid plot type.\n    Must be either \"BarHPlot\","\
             " \"BarPlot\", \"LinePlot\", \"PiePlot\", \"ScatterPlot\", or \"StackPlot\"." + END
-NO_PROT = BEG + ": Error: A protocol (-p) must be specified for \"%s\"." + END
-INVAL_PROT = BEG + ": Error: Invalid set of protocols \"%s\" for \"%s\".\n"\
+NO_PROT = BEG + "A protocol (-p) must be specified for \"%s\"." + END
+INVAL_PROT = BEG + "Invalid set of protocols \"%s\" for \"%s\".\n"\
              "    Protocols should be in the form \"[send].[receive]\"." + END
-INVAL_LOC = BEG + ": Error: Invalid IP locator method \"%s\" for \"%s\".\n    Must be"\
+INVAL_LOC = BEG + "Invalid IP locator method \"%s\" for \"%s\".\n    Must be"\
             " either \"Country\", \"Host\", \"IP\", \"TSharkHost\", or \"RipeCountry\"." + END
-INVAL_ATTR = BEG + ": Error: Invalid IP Attribute \"%s\" for \"%s\".\n"\
+INVAL_ATTR = BEG + "Invalid IP Attribute \"%s\" for \"%s\".\n"\
              "    Must be either \"addrPcktNum\" or \"addrPcktSize\"." + END
 
-NO_PCKT = BEG + ": Error The file \"%s\" does not contain any packets." + END
+NO_PCKT = BEG + "The file \"%s\" does not contain any packets." + END
 
