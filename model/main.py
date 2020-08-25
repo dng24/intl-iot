@@ -90,7 +90,7 @@ def main():
     # Thursday 11 June 2020 11:37:02 EDT
 
     if args.models is None:
-        args.models = ["d", "k", "n", "r", "s"]
+        args.models = ["n"]
 
     #Error checking and script checks
     #check scripts

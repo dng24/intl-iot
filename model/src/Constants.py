@@ -119,7 +119,7 @@ Optional arguments:
                     (Default = 1)
   -h              display this usage statement and exit
 
-Note: If no model is specified to be generated, all five models will be generated.
+Note: If no model is specified to be generated, all the KNN model will be generated.
 
 For more information, see the README and model_details.md.""".format(prog_name=PATH)
 

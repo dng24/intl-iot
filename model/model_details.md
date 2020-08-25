@@ -143,7 +143,7 @@ Optional arguments:
 
 `-h` - Display the usage statement and exit.
 
-Note: If no models are specified to be generated, all five models will be created.
+Note: If no models are specified to be generated, all the KNN model will be created.
 
 #### Output
 

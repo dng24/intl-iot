@@ -53,7 +53,7 @@ There are several options which one can choose from.
 
 #### Notes
 
-- If no algorithms are specified, all five algorithms will be used to generate models.
+- If no algorithms are specified, the KNN algorithm will be used to generate models.
 
 ### Output
 
