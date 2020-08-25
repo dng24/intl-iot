@@ -9,7 +9,7 @@ Before starting, go to https://dev.maxmind.com/geoip/geoip2/geolite2/ to create 
 
 ## Usage
 
-Usage: `python3 analyze.py -i IN_DIR {-m MAC_ADDR | -d DEV} [OPTION]... [-g PLOT -p PROTO [GRAPH_OPTION]...]...`
+Usage: `python3 analyze.py -i IN_DIR {-m MAC_ADDR | -d DEV} [OPTION]... [-g PLOT -p PROTO [GRAPH_OPTION]...]`
 
 Example: `python3 analyze.py -i iot-data/us/echodot/voice/ -d echodot -o output.csv -n 4`
 
