@@ -24,7 +24,7 @@ pip install numpy scipy pyshark geoip2 matplotlib dpkt pycrypto IPy pcapy scapy 
 
 ### Download Datasets
 
-If you would like to use the dataset from this study, follow the directions below to obtain a copy. If you have your own data, you may skip this section. **All examples shown uses this dataset.**
+If you would like to use the dataset from this study, follow the directions below to obtain a copy. If you have your own data, you may skip this section. **All examples shown use this dataset.**
 
 1) Go to the [Mon(IoT)r Lab site](https://moniotrlab.ccis.neu.edu/imc19/) to request access to the dataset. You will have to agree to a data sharing agreement because of sensitive information that may still be in the data.
 2) Once you have access, download the four tar archives.
@@ -117,7 +117,7 @@ Meanings of the options in very basic usage:
 For output, a directory with several intermediate directories and the activity predictions are produced. By default, the output directory is named `results/`, but it can be changed by using the `-o` option. For more information about the contents of the output directory, see the output section in [model/README.md](model/README.md#output).
 
 Example: `python3 main.py -i traffic/us/ -u sample-untagged/`
-  - Output: A directory named `results/` is produced, containing several intermediate directories and files. The final predictions are located in `results/s10-results/yi-camera_results/model_results.csv`. For an explanation of the contents of this file, see the `s10_predict.py` section of [model/model_details.md](model/model_details.md#output-7).
+  - Output: A directory named `results/` is produced, containing several intermediate directories and files. The final predictions are located in `results/tagged/s10-results/yi-camera_results/model_results.csv`. For an explanation of the contents of this file, see the `s10_predict.py` section of [model/model_details.md](model/model_details.md#output-8).
 
 For more information about the files and directories in this section, see [model/model_details.md](model/model_details.md).
 

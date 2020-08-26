@@ -147,7 +147,7 @@ Note: If no models are specified to be generated, all the KNN model will be crea
 
 #### Output
 
-This script places all output in `OUT_DIR`. The Tagged Pipeline (-i and -u options) results are placed in `OUT_DIR/tagged`:
+This script places all output in `OUT_DIR`. The Tagged Pipeline (`-i` and `-u` options) results are placed in `OUT_DIR/tagged`:
 
 - `s1_test_paths.txt` - The paths to pcap files used to test the trained models.
 - `s1_train_paths.txt` - The paths to pcap files used to create the machine learning models.
@@ -164,7 +164,7 @@ This script places all output in `OUT_DIR`. The Tagged Pipeline (-i and -u optio
 
 Steps 6-10 are run only if `-u` is specified.
 
-The Idle Pipeline (-l option) results are placed in `OUT_DIR/idle`:
+The Idle Pipeline (`-l` option) results are placed in `OUT_DIR/idle`:
 
 - `s1_idle_paths.txt` - The paths to pcap files of the idle data.
 - `s2-idle-decoded/` - The directory containing the decoded idle pcap files.
@@ -175,7 +175,7 @@ Information about the contents of each of these files and directories can be fou
 
 ### src/s1_split_data.py
 
-This script is the first step of the tagged pipeline and the first step in the preprocessing phase of the tagged pipeline. It is also the first step of the idle pipeline. The script takes a directory of pcaps recursively and randomly splits the pcaps into a training set and a testing set.
+This script is the first step of the tagged pipeline and the first step in the preprocessing phase of the tagged pipeline. It is also the first step of the idle pipeline. For the tagged pipeline, the script takes a directory of pcaps recursively and randomly splits the pcaps into a training set and a testing set. For the idle pipeline, the script places all pcaps found in one set instead of two.
 
 #### Usage
 
@@ -253,7 +253,7 @@ Example: `python3 extract_features.py tagged-decoded/us/ features/us/ 4`
 
 #### Output
 
-Each valid input text (.txt) file in the input directory will be analyzed, and a CSV file containing statistical analysis will be produced in a `cache/` directory in `out_features_dir`. The name of this file is a sanitized version of the input file path. After each input file is processed, all the CSV files of each device will be concatenated together in a separate CSV file, named {device}.csv, which will be placed in `out_features_dir`.
+Each valid input text (.txt) file in the input directory will be analyzed, and a CSV file containing statistical analysis will be produced in a `cache/` directory in `out_features_dir`. The name of this file is a sanitized version of the input file path. After each input file is processed, all the CSV files of each device will be concatenated together in a separate CSV file, named `{device}.csv`, which will be placed in `out_features_dir`.
 
 If a device already has a concatenated CSV file located in `out_features_dir`, no analysis will occur for that device, and the existing file will remain. If a device does not have a concatenated CSV file, the script will regenerate any cache files, as necessary, and the cache files of the device will be concatenated. If an input file is not a text (.txt) file, no output will be produced for that file.
 
@@ -306,9 +306,9 @@ Example: `python3 s4_eval_model.py -i features/us/ -o tagged-models/us/ -kn`
 
 #### Input
 
-`-i IN_FEATURES_DIR` - The path to a directory containing CSV files that have analyzed pcap data. This option is required.
+`-i IN_FEATURES_DIR` - The path to a directory containing CSV files that have analyzed pcap data. **This option is required.**
 
-`-o OUT_MODELS_DIR` - The path to the directory to place the generated model. If this directory currently does not exist, it will be generated. This option is required.
+`-o OUT_MODELS_DIR` - The path to the directory to place the generated model. If this directory currently does not exist, it will be generated. **This option is required.**
 
 `-d` - Generate a model using the DBSCAN algorithm.
 
@@ -330,15 +330,15 @@ The script will generate five files for each model specified:
 - `{OUT_MODELS_DIR}/{model}/{device}{model}.model` - The model. If this file exists, then this model will not be regenerated.
 - `{OUT_MODELS_DIR}/{model}/{device}.label.txt` - A newline-delimited file of the possible activities of a device that the model can predict.
 - `{OUT_MODELS_DIR}/{model}/{device}.result.csv` - A file containing the results of model generation. The first line is a tab-delimited, with the following columns:
- - First column - The device name.
- - Second column - The accuracy classification score.
- - Third column - The homogeneity score.
- - Fourth column - The completeness score.
- - Fifth column - The V-measure score.
- - Sixth column - The adjusted Rand index.
- - Seventh column - The noise if the model is DBSCAN. Otherwise, this column is `-1`.
- - Eighth column - The mean Silhouette Coefficient. This column is `-1` for RF models.
- The second and third lines contain the predictions. 
+  - First column - The device name.
+  - Second column - The accuracy classification score.
+  - Third column - The homogeneity score.
+  - Fourth column - The completeness score.
+  - Fifth column - The V-measure score.
+  - Sixth column - The adjusted Rand index.
+  - Seventh column - The noise if the model is DBSCAN. Otherwise, this column is `-1`.
+  - Eighth column - The mean Silhouette Coefficient. This column is `-1` for RF models.
+  - The second and third lines of this file contain the predictions. 
 - `{OUT_MODELS_DIR}/output/result_{model}.txt` - This file is a copy of `{OUT_MODELS_DIR}/{model}/{device}.result.csv` without the second and third lines.
 
 ### src/s4i_find_idle.py
@@ -367,9 +367,9 @@ This script is the fifth step of the tagged pipeline and the second step of the 
 
 #### Usage
 
-Usage: `python3 s5_find_anomalies.py in_features_dir out_models_dir
+Usage: `python3 s5_find_anomalies.py in_features_dir out_models_dir`
 
-Example: `python3 s5_find_anomalies.py features/us/ tagged-models/us/
+Example: `python3 s5_find_anomalies.py features/us/ tagged-models/us/`
 
 #### Input
 
@@ -379,7 +379,7 @@ Example: `python3 s5_find_anomalies.py features/us/ tagged-models/us/
 
 #### Output
 
-This script produces an anomaly model to `{out_models_dir}/anomaly_model/multivariate_model_{device}.pkl`.
+This script produces an anomaly model at `{out_models_dir}/anomaly_model/multivariate_model_{device}.pkl`.
 
 ### src/s8_slide_split.py
 
@@ -393,9 +393,9 @@ Example: `python3 slide_split.py -i decoded/us/ -o decoded-split/us/ -t 20 -s 15
 
 #### Input
 
-`-i IN_DEC_DIR` - The path to a directory containing decoded pcap text files, generated by `s2_7_decode_raw.py`. This option is required.
+`-i IN_DEC_DIR` - The path to a directory containing decoded pcap text files, generated by `s2_7_decode_raw.py`. **This option is required.**
 
-`-o OUT_DIR` - The path to the directory to place the split decoded files. This directory will be created if it does not exist. This option is required.
+`-o OUT_DIR` - The path to the directory to place the split decoded files. This directory will be created if it does not exist. **This option is required.**
 
 `-t TIME_WIN` - The maximum number of seconds of traffic that each split file will contain. Default is `30`.
 
@@ -449,15 +449,13 @@ The script takes the features in `in_features_dir/{device}.csv` and uses the mod
 
 ### Internally Called Scripts 
 
+These scripts are called by other scripts in the model pipelines for support:
+
 - `src/unsupervised_classification.py` - Called by `s10_predict.py` for unsupervised clustering of data points. 
 - `src/retrain.py` - Retrained supervised model based on new classification of data points and new clusters.
 - `src/Constants.py` - A list of constants that support the functionality of the pipelines.
 
 ## Non-scripts
-
-### model_sample.ipynb
-
-A Jupyter Notebook that contains runnable code with the same commands as `model.sh`. However, there are explanations as to what each command does in the Jupyter Notebook.
 
 ### model_details.md
 
@@ -469,15 +467,15 @@ The README.
 
 ### requirements.txt
 
-The software that should be installed before running this pipeline. To install, run:
+The dependencies that should be installed before running this pipeline. To install, run:
 
 ```
 pip install -r requirements.txt
 ```
 
-### yi_camera_sample.pcap
+### sample-untagged/yi-camera/yi_camera_sample.pcap
 
-A sample pcap file for demonstration that can be used to predict the device activity based on the traffic in the file.
+A sample untagged pcap file for demonstration that can be used to predict the device activity based on the traffic in the file.
 
 ### traffic/
 
@@ -491,4 +489,3 @@ An input directory with sample pcap files to generate machine learning models. T
 Each path should be on a new line.
 
 Note: To obtain the sample files in `traffic/`, please follow the directions in the Download Datasets section in [Getting_Started.md](../Getting_Started.md#download-datasets). If you have your own pcap files, you do not need to obtain these files.
-
