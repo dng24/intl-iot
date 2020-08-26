@@ -183,6 +183,7 @@ def run_process(features_file, dev_result_dir, base_model_file, anomaly_model_fi
                     'prediction': y_predict}
         out_df = pd.DataFrame(out_dict)
         out_df['prediction'] = out_df['prediction'].map(reverse_di).fillna("normal")
+        out_df = out_df.drop_duplicates()
         out_df.to_csv(dev_result_dir + '/model_results.csv', index=False)
         original_data['state'] = y_predict
         retrain_model(original_data, model_dir, trained_features_file)
@@ -194,6 +195,7 @@ def run_process(features_file, dev_result_dir, base_model_file, anomaly_model_fi
         out_dict = {'start_time': start_time, 'end_time': end_time,
                     'tagged': final_data['state'], 'prediction': y_predict}
         out_df = pd.DataFrame(out_dict)
+        out_df = out_df.drop_duplicates()
         out_df.to_csv(dev_result_dir + '/model_results.csv', index=False)
         original_data['state'] = y_predict
         retrain_model(original_data, model_dir, trained_features_file)

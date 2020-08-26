@@ -13,11 +13,35 @@ import time
 from sklearn import metrics
 from sklearn.metrics import silhouette_score
 from sklearn.mixture import GaussianMixture
-
+from collections import Counter
 global fowlkes_mallows_dict,min_clusters_dict,result_df,column_names
 fowlkes_mallows_dict = {}
 min_clusters_dict = {}
 
+
+def group_eval(actual,labelled):
+    grouped_actual = {}
+    for index, elem in enumerate(actual):
+        key = elem
+        grouped_actual.setdefault(key, []).append(index)
+    grouped_actual = grouped_actual.values()
+
+    print(len(grouped_actual))
+
+    grouped_labelled = {}
+    for index, elem in enumerate(labelled):
+        key = elem
+        grouped_labelled.setdefault(key, []).append(index)
+    grouped_labelled = grouped_labelled.values()
+
+    print(len(grouped_labelled))
+    for ind_cluster in grouped_actual:
+        arr = []
+        for index in ind_cluster:
+            arr.append(labelled[index])
+            most_common, num_most_common = Counter(arr).most_common(1)[0]
+
+        #print(arr)
 
 def evaluate(new_data):
     new_data['Device'] = pd.Categorical(new_data.Device)
@@ -25,6 +49,7 @@ def evaluate(new_data):
     labels_true = new_data['Actual']
     labels_pred = new_data['clusters']
     fowlkes_mallows = metrics.fowlkes_mallows_score(labels_true, labels_pred)
+    #group_eval(np.array(labels_true),np.array(labels_pred))
     return fowlkes_mallows
 
 
@@ -98,7 +123,6 @@ def main():
     """
     Usage: python3 unsupervised_check.py /path_to_labelled_features_file
     Returns: Output file with evaluation of the unsupervised techniques on all devices in the path.
-
     """
     features_file = sys.argv[1]
     column_names = ['Device', 'FMI', 'Actual Num Clusters', 'Pred Num Clusters']

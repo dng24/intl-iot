@@ -27,6 +27,7 @@ from sklearn.metrics import f1_score
 import matplotlib
 matplotlib.use("Agg")
 from matplotlib import pyplot as plt
+
 from multiprocessing import Pool
 import Constants as c
 
@@ -47,12 +48,13 @@ def tsne_plot(X, y, figfile, pp=30):
     # print(plot_data.head())
     fig = plt.figure()
     ax = plt.subplot(111)
-    for yi, g in plot_data.groupby('cluster_label'):
+    colors = matplotlib.cm.rainbow(np.linspace(0, 1, len(plot_data.groupby('cluster_label'))))
+    for (yi, g),c in zip(plot_data.groupby('cluster_label'),colors):
         g2 = g.drop('cluster_label', axis=1)
         if yi == -1:
-            plt.scatter(g.x, g.y, label='cluster_%s' % yi, marker='*')
+            plt.scatter(g.x, g.y, label='cluster_%s' % yi, marker='*',color=c)
         else:
-            plt.scatter(g.x, g.y, label='cluster_%s' % yi)
+            plt.scatter(g.x, g.y, label='cluster_%s' % yi,color=c)
     ax.legend(bbox_to_anchor=(1.1, 1.1))
 
     print('\tSaved the tSNE plot to %s' % figfile)
