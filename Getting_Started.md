@@ -6,21 +6,20 @@ This document provides a step-by-step starting guide to perform analysis with th
 
 ### System Setup
 
-A good operating system to use is Linux. Specifically, this guide was written using Ubuntu 18.04. The code might work using a Mac terminal, but there could be issues, such as with TShark. The code has not been tested on Windows. Users on a Windows or Mac platform are strongly encouraged to use an Ubuntu virtual machine. [VirtualBox](https://www.virtualbox.org/) and [VMWare](https://www.vmware.com/) are two popular virtual machine softwares. If you are using a virtual machine, please make sure to allocate enough disk space. If you are using the dataset from this study, it is recommended that 30 GB be allocated.
+A good operating system to use is **Linux**. Specifically, this guide was written using **Ubuntu 18.04**. The code might work using a Mac terminal, but there could be issues, such as with TShark. The code has not been tested on Windows. Users on a Windows or Mac platform are strongly encouraged to use an Ubuntu virtual machine. [VirtualBox](https://www.virtualbox.org/) and [VMWare](https://www.vmware.com/) are two popular virtual machine softwares. If you are using a virtual machine, please make sure to allocate enough disk space. If you are using the dataset from this study, it is recommended that 30 GB be allocated.
 
 ### Environment Setup
 
-1) Clone the Git Repo: `git clone https://github.com/NEU-SNS/intl-iot`
-2) Create a Python 3.6 environment to run the scripts:
-```Bash
-sudo apt-get install virtualenv libpcap-dev libpq-dev python3-dev python3.6-tk gcc tshark
-virtualenv -p python3.6 env
-source env/bin/activate
-```
-3) Install the following packages:
-```Bash
-pip install numpy scipy pyshark geoip2 matplotlib dpkt pycrypto IPy pcapy scapy Impacket mysql-connector-python-rf pandas tldextract python-whois ipwhois psutil seaborn
-```
+1) Install Git: `sudo apt-get install git`
+2) Clone the Git Repo: `git clone https://github.com/NEU-SNS/intl-iot`
+3) Go into software directory: `cd intl-iot/`
+4) Run the setup script: `./setup.sh`
+
+A Python 3.6 environment with the dependencies needed to run this software has now been set up at `intl-iot/env/`. 
+
+5) Activate the environment: `source env/bin/activate`
+
+The software is ready to run. If you are finished running the software and would like to deactivate the environment, simply run the `deactivate` command.
 
 ### Download Datasets
 
