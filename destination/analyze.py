@@ -94,7 +94,7 @@ devices = None
 
 #isError is either 0 or 1
 def print_usage(is_error):
-    #print(c.USAGE_STM, file=sys.stderr) if is_error else print(c.USAGE_STM)
+    print(c.USAGE_STM, file=sys.stderr) if is_error else print(c.USAGE_STM)
     exit(is_error)
 
 
