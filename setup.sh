@@ -1,7 +1,8 @@
 #!/bin/bash
 
 #setup python3.6 environment
-sudo apt-get install virtualenv libpcap-dev libpq-dev python3-dev python3.6-tk gcc tshark
+sudo apt-get -y update
+sudo apt-get -y install virtualenv libpcap-dev libpq-dev python3-dev python3.6-tk g++ tshark
 virtualenv -p python3.6 env
 source env/bin/activate
 
