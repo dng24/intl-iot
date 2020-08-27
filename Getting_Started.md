@@ -6,7 +6,7 @@ This document provides a step-by-step starting guide to perform analysis with th
 
 ### System Setup
 
-A good operating system to use is **Linux**. Specifically, this guide was written using **Ubuntu 18.04**. The code might work using a Mac terminal, but there could be issues, such as with TShark. The code has not been tested on Windows. Users on a Windows or Mac platform are strongly encouraged to use an Ubuntu virtual machine. [VirtualBox](https://www.virtualbox.org/) and [VMWare](https://www.vmware.com/) are two popular virtual machine softwares. If you are using a virtual machine, please make sure to allocate enough disk space. If you are using the dataset from this study, it is recommended that 30 GB be allocated.
+A good operating system to use is **Linux**. Specifically, this guide was written using **Ubuntu 18.04.1**, which a free copy can be downloaded [here](http://old-releases.ubuntu.com/releases/18.04.1/). The code might work using a Mac terminal, but there could be issues, such as with TShark. The code has not been tested on Windows. Users on a Windows or Mac platform are strongly encouraged to use an Ubuntu virtual machine. [VirtualBox](https://www.virtualbox.org/) and [VMWare](https://www.vmware.com/) are two popular virtual machine softwares. If you are using a virtual machine, please make sure to allocate enough disk space. If you are using the dataset from this study, it is recommended that 30 GB be allocated.
 
 ### Environment Setup
 
