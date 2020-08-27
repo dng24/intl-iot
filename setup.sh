@@ -3,8 +3,8 @@
 #setup python3.6 environment
 sudo apt-get -y update
 sudo apt-get -y install virtualenv libpcap-dev libpq-dev python3-dev python3.6-tk g++ tshark
-virtualenv -p python3.6 env
-source env/bin/activate
+virtualenv -p python3.6 py3.6
+source py3.6/bin/activate
 
 #for all pipelines
 pip install numpy scipy pyshark geoip2 matplotlib dpkt pycrypto IPy pcapy scapy Impacket \
