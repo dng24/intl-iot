@@ -150,8 +150,10 @@ def main():
     print("Start time: %s\n" % time.strftime("%A %d %B %Y %H:%M:%S %Z", time.localtime(start_time)))
 
     #Check that GeoLite2 databases and aux scripts exist and have proper permissions
-    check_files(GEO_DIR, [GEO_DB_CITY, GEO_DB_COUNTRY], True)
-    check_files(AUX_DIR, [IP_TO_ORG, IP_TO_COUNTRY], False)
+    errors = check_files(GEO_DIR, [GEO_DB_CITY, GEO_DB_COUNTRY], True)
+    errors = check_files(AUX_DIR, [IP_TO_ORG, IP_TO_COUNTRY], False) or errors
+    if errors:
+        exit(1)
 
     #Options
     parser = argparse.ArgumentParser(usage=c.USAGE_STM, add_help=False)
@@ -205,10 +207,7 @@ def main():
             exit(1)
 
     #Error checking command line args and files
-    #Check that GeoLite2 databases and aux scripts exist and have proper permissions
-    errors = (check_files(GEO_DIR, [GEO_DB_CITY, GEO_DB_COUNTRY], True) or 
-              check_files(AUX_DIR, [IP_TO_ORG, IP_TO_COUNTRY], False))
-
+    errors = False
     #check -i input dir
     if args.in_dir == "":
         errors = True 
