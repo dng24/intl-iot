@@ -49,7 +49,7 @@ There are required arguments as well as several optional arguments which one can
 
 `-o OUT_CSV` - The path to the output CSV file. If it exists, results will be appended, else, it will be created. Default is `results.csv`.
 
-`-n NUM_PROC` - The number of processes to use to analyze the pcap files. Default is `1`.
+`-n NUM_PROC` - The number of processes to use to analyze the pcap files. Must be a positive integer. Default is `1`.
 
 `-h` - Print the usage statement and exit.
 
@@ -106,8 +106,8 @@ An argument for the `-r` option specifies the attribute to plot in a graph. This
 
 Example: If the graph options specified are `-g LinePlot,BarHPlot -p eth.eth,eth.eth -l ,Country -r ,addrPcktNum`, then the following plots are produced:
 
-- A line plot (-g) with Ethernet as both the send and receive protocols (-p).
-- A horizontal bar plot (-g) with Ethernet as both the send and receive protocols (-p) using the country method to map IP addresses to hosts (-l) and plotting the number of packets (-r).
+- A line plot (`-g`) with Ethernet as both the send and receive protocols (`-p`).
+- A horizontal bar plot (`-g`) with Ethernet as both the send and receive protocols (`-p`) using the country method to map IP addresses to hosts (`-l`) and plotting the number of packets (`-r`).
 
 ### Output
 

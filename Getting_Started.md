@@ -10,14 +10,14 @@ A good operating system to use is **Linux**. Specifically, this guide was writte
 
 ### Environment Setup
 
-1) Install Git: `sudo apt-get install git`
+1) Install Git: `sudo apt-get -y install git`
 2) Clone the Git Repo: `git clone https://github.com/NEU-SNS/intl-iot`
 3) Go into software directory: `cd intl-iot/`
 4) Run the setup script: `./setup.sh`
 
-A Python 3.6 environment with the dependencies needed to run this software has now been set up at `intl-iot/env/`. 
+A Python 3.6 environment with the dependencies needed to run this software has now been set up at `intl-iot/py3.6/`. 
 
-5) Activate the environment: `source env/bin/activate`
+5) Activate the environment: `source py3.6/bin/activate`
 
 The software is ready to run. If you are finished running the software and would like to deactivate the environment, simply run the `deactivate` command.
 
@@ -93,11 +93,10 @@ Content Analysis takes in several pcap files with known device activity to creat
 ### Setup
 
 1) `cd` into the `intl-iot/model/` directory.
-2) Install the required libraries: `pip install -r requirements.txt`.
 
 If you are using the datasets from this study, you may skip to the next section. If you are using your own datasets, please follow the steps below to properly structure your input pcap files.
 
-3) You will need several pcap files to create a machine learning model; the more files the better. The activity of the device when each pcap file was created should be known. Put the pcap files in the following directory structure, based on the device and activity type:
+2) You will need several pcap files to create a machine learning model; the more files the better. The activity of the device when each pcap file was created should be known. Put the pcap files in the following directory structure, based on the device and activity type:
 ```
 {root_experiment_director(y|ies)}/{device_name}/{device_activity}/{pcap_file}.pcap
 ```

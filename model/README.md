@@ -8,8 +8,6 @@ For step-by-step instructions on getting started, see the [Getting Started](../G
 
 Python 3.6 is required to run this code. Please follow the steps under General Setup in [Getting_Started.md](../Getting_Started.md#general-setup) before continuing.
 
-Install the dependencies: `pip install -r requirements.txt`
-
 ## Information about the Model
 
 For an explanation about the machine learning models: [model_details.md](model_details.md)
@@ -29,11 +27,11 @@ There are several options which one can choose from.
 
 #### Options
 
-`-i TAGGED_DIR` - The path to the directory containing pcap files with known device activity to generate the machine learning models. See the [traffic/](model_details.md#traffic) section in model_details.md for the required structure of this directory. **Either this and/or the `-l` option must be specified.**
+`-i TAGGED_DIR` - The path to the directory containing pcap files with known device activity to generate the machine learning models. See the [traffic/](model_details.md#traffic) section in `model_details.md` for the required structure of this directory. **Either this and/or the `-l` option must be specified.**
 
 `-l IDLE_DIR` - The path to the directory containing idle pcap files to generate the idle activity detection models. **Either this and/or the `-i` option must be specified.**
 
-`-u UNTAGGED_DIR` - The path to the directory containing pcap files with unknown device activity for prediction. See the [traffic/](model_details.md#traffic) section in model_details.md for the required structure of this directory. The `-i` option must be specified to use this option.
+`-u UNTAGGED_DIR` - The path to the directory containing pcap files with unknown device activity for prediction. See the [traffic/](model_details.md#traffic) section in `model_details.md` for the required structure of this directory. **The `-i` option must be specified to use this option.**
 
 `-d` - Generate a model using the DBSCAN algorithm.
 
@@ -47,7 +45,7 @@ There are several options which one can choose from.
 
 `-o OUT_DIR` - The path to a directory to place all intermediate and final prediction output. This directory will be generated if it currently does not exist.
 
-`-p NUM_PROC` - The number of processes to use to run parts of this pipeline. Default is `1`.
+`-p NUM_PROC` - The number of processes to use to run parts of this pipeline. Must be a positive integer. Default is `1`.
 
 `-h` - Display the usage statement and exit.
 

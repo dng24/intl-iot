@@ -115,8 +115,8 @@ Optional arguments:
   -o OUT_DIR      path to an output directory to place all intermediate and
                     final prediction output; directory will be generated if it
                     currently does not exist (Default = results/)
-  -p NUM_PROC     number of processes to use to run parts of this pipeline
-                    (Default = 1)
+  -p NUM_PROC     number of processes to use to run parts of this pipeline; must
+                    be a positive integer (Default = 1)
   -h              display this usage statement and exit
 
 Note: If no model is specified to be generated, all the KNN model will be generated.
@@ -156,7 +156,8 @@ Arguments:
                  paths must be formatted as .../{{device}}/{{activity}}/{{filename}}.pcap
   out_dec_dir: path to the directory to place the decoded output; directory will be
                  generated if it does not already exist
-  num_proc:    number of processes to use to decode the pcaps (Default = 1)
+  num_proc:    number of processes to use to decode the pcaps; must be a positive integer
+                 (Default = 1)
 
 For more information, see model_details.md.""".format(prog_name=PATH)
 
@@ -172,8 +173,8 @@ Arguments:
   in_dec_dir:   path to a directory containing text files of decoded pcap data
   out_feat_dir: path to the directory to write the analyzed CSV files;
                   directory will be generated if it does not already exist
-  num_proc:     number of processes to use to generate feature files
-                  (Default = 1)
+  num_proc:     number of processes to use to generate feature files; must be
+                  a positive integer (Default = 1)
 
 For more information, see the README or model_details.md.""".format(prog_name=PATH)
 
@@ -251,11 +252,12 @@ Required arguments:
                   will be created if it does not exist
 
 Optional arguments:
-  -t TIME_WIN  the maximum number of seconds of traffic that each file will contain
-                 (Default = 30)
-  -s SLIDE_INT the minimum number of seconds between the first timestamp of each file
-                 (Default = 5)
-  -p NUM_PROC  number of processes to use to split the decoded files (Default = 1)
+  -t TIME_WIN  the maximum number of seconds of traffic that each file will contain;
+                 must be a positive integer (Default = 30)
+  -s SLIDE_INT the minimum number of seconds between the first timestamp of each file;
+                 must be a positive integer (Default = 5)
+  -p NUM_PROC  number of processes to use to split the decoded files; must be a
+                 positive integer (Default = 1)
   -h           print this usage statement and exit
 
 Note: TIME_WIN must be greater or equal to SLIDE_INT. To have each packet appear only

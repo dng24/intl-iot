@@ -59,7 +59,8 @@ Options:
                 if it does not currently exist (Default = figures/)
   -o OUT_CSV  path to the output CSV file; if it exists, results will be
                 appended, else, it will be created (Default = results.csv)
-  -n NUM_PROC number of processes to use to analyze the pcap files (Default = 1)
+  -n NUM_PROC number of processes to use to analyze the pcap files; must be a
+                positive integer (Default = 1)
   -h          print this usage statement and exit
 
 Graph options:

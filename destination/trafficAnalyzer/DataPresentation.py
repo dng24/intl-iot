@@ -91,8 +91,8 @@ class PlotManager(object):
     def sanitiseFileName(self, file_name):
         keepcharacters = ('-', '.', '_')
         plots = "".join("_" + plot["plt"] for plot in self.graphs)
-        return "".join(c for c in file_name[:-5] if c.isalnum() or c in keepcharacters).rstrip()\
-               + plots + ".png"
+        return ("".join(c for c in file_name[:-5] if c.isalnum() or c in keepcharacters).rstrip()
+               + plots + ".png").lstrip(".")
 
 
 class DataPresentation(object):

@@ -1,8 +1,8 @@
 ## Validation of threshold for encryption classification
 
-Go to https://moniotrlab.ccis.neu.edu/imc19/ to request the data set before running any scripts. Once accesss is granted, download `sythetic.tgz` and untar it to this directory.
+Go to https://moniotrlab.ccis.neu.edu/imc19/ to request the data set before running any scripts. Once access is granted, download `synthetic.tgz` and untar it to this directory.
 
-**Prep.** `synthetic/f*.txt` are text from the IMC 2019 site. Run `mass_enc.sh` to generate encryted version in the same folder.
+**Prep.** `synthetic/f*.txt` are text from the IMC 2019 site. Run `mass_enc.sh` to generate encrypted version in the same folder.
 
 **Validation of symmetric.** To create some synthetic examples of encrypted vs. plaintext ASCII data sent over either TCP or UDP, we run a local server and a local client. For simplicity, we use a python socket for the communication, and we collect local network traffic on the port 12345 (encrypted) and 12346 (plain) by using wireshark/tshark, usually it is the lo0 interface. 
 
@@ -45,9 +45,9 @@ Steps to collect the above traffic yourself:
 2. Run `./gen_ssl.sh` to iterate ciphers available in the machine 
 
 ### Extract and Collect Entropies    
-1. `./mass_extract_compute.sh` takes in any .pcap file in the `sythetic/` directory for entropy computation. 
+1. `./mass_extract_compute.sh` takes in any .pcap file in the `synthetic/` directory for entropy computation. 
 2. Update `slists.txt` to include whatever experiment traffic you generated.
-3. `python synthetic_threshold.py`. Expected outcome from exisiting dataset is shown as below. Note that this is only one example using Fernet https://cryptography.io/en/latest/fernet/:
+3. `python synthetic_threshold.py`. Expected outcome from existing dataset is shown as below. Note that this is only one example using Fernet https://cryptography.io/en/latest/fernet/:
 
 ```
    data_type data_proto       avg       std        mi        ma
